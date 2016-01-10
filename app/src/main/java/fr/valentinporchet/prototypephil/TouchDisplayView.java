@@ -17,11 +17,13 @@ package fr.valentinporchet.prototypephil;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PathMeasure;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.SeekBar;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,111 +35,45 @@ import java.util.Random;
  * track of touch pointers across events.
  */
 public class TouchDisplayView extends View {
+    /**
+     * Public variables and constants
+     */
+    public static float PATH_THICKNESS = 15f; // thickness (without DENSITY of screen)
+    public static int ANIMATION_SPEED = 1000; // paths per second
 
     /**
      * Private constants
      */
-
-    // radius of active touch circle in dp
-    private static final float CIRCLE_RADIUS_DP = 15f;
-    private static final float INACTIVE_BORDER_DP = 10f;
-    private static final int INACTIVE_BORDER_COLOR = 0xFFFFD060;
-    private static final float PRESSURE = 1f;
-    private static final int[] COLORS = {
+    private final float DENSITY = getResources().getDisplayMetrics().density;
+    private final int[] COLORS = {
             0xFF33B5E5, 0xFFAA66CC, 0xFF99CC00, 0xFFFFBB33, 0xFFFF4444,
             0xFF0099CC, 0xFF9933CC, 0xFF669900, 0xFFFF8800, 0xFFCC0000
     };
+    private final int BACKGROUND_COLOR = 0xFFFFFFFF;
 
     /**
      * Private variables
      */
 
     // main variables
-    private boolean mHasTouch = false;
-    private Date date = new Date();
-    private ArrayList<TouchHistory> history = new ArrayList<TouchHistory>();
-    private ArrayList<PathHistory> pathHistory = new ArrayList<PathHistory>();
+    private boolean mIsDrawing = false;
+    private boolean mIsAnimationDrawing = false;
+    private Date mDate = new Date();
 
-    // calculated radius in px
-    private float mCircleRadius;
-    private int mColor;
-    private float mRadius;
-    private Paint mCirclePaint = new Paint();
+    // containers of paths to draw and to animate
+    private ArrayList<Path> mPathsToDraw = new ArrayList<Path>();
 
-    private float mPathWidth;
+    // variables for the path
+    private float mPathThickness; // thickness of the path
+    private int mColor; // color of the path
     private Paint mPathPaint = new Paint();
 
-    private float mBorderWidth;
-    private Paint mBorderPaint = new Paint();
+    // temp variables
+    private Path mPath = null, mSegment = null;
 
-    /**
-     * Inner classes
-     */
-    final class TouchHistory {
-        private float mX;
-        private float mY;
-        private long mTime;
-
-        public TouchHistory(float x, float y, long elapsedTime) {
-            mX = x; mY = y; mTime = elapsedTime;
-        }
-
-        public float getX() {
-            return mX;
-        }
-
-        public float getY() {
-            return mY;
-        }
-
-        public long getTime() {
-            return mTime;
-        }
-    }
-
-    final class PathHistory {
-        private float mX, mY, mWidth, mHeight, mRotation;
-
-        public PathHistory(float startX, float endX, float startY, float endY) {
-            mX = startX;
-            mY = startY - mRadius;
-            mHeight = mRadius * 2;
-            mWidth = (float)Math.sqrt(Math.abs(endX - startX) + Math.abs(endY - startY));
-            mRotation = (float) Math.tan(Math.abs(endY - startY) / Math.abs(endX - startX));
-            System.out.println("startX=" + startX + ", startY=" + startY + ", endX=" + endX + ", endY=" + endY + ", diffY=" + Math.abs(endY - startY) + ", diffX=" + Math.abs(endX - startX));
-        }
-
-        public float getX() {
-            return mX;
-        }
-
-        public float getY() {
-            return mY;
-        }
-
-        public float getWidth() {
-            return mWidth;
-        }
-
-        public float getHeight() {
-            return mHeight;
-        }
-
-        public float getRotation() {
-            return mRotation;
-        }
-
-        @Override
-        public String toString() {
-            return "PathHistory{" +
-                    "mX=" + mX +
-                    ", mY=" + mY +
-                    ", mWidth=" + mWidth +
-                    ", mHeight=" + mHeight +
-                    ", mRotation=" + mRotation +
-                    '}';
-        }
-    }
+    // measure of path, need it in order to animate
+    private PathMeasure mPathMeasure = null;
+    private long mChrono = 0;
 
     /**
      * Constructor of the TouchDisplayView class
@@ -147,6 +83,25 @@ public class TouchDisplayView extends View {
     public TouchDisplayView(Context context, AttributeSet attrs) {
         super(context, attrs);
         initialisePaint();
+
+
+    }
+
+    /**
+     * Sets up the required {@link android.graphics.Paint} objects for the screen density of this
+     * device.
+     */
+    private void initialisePaint() {
+        // Calculate radius in px from dp based on screen density
+
+        // Initialize Path Paint
+        mPathThickness = PATH_THICKNESS * DENSITY;
+
+        mPathPaint.setDither(true);
+        mPathPaint.setStrokeWidth(mPathThickness); // thickness of path
+        mPathPaint.setStyle(Paint.Style.STROKE); // style of path
+        mPathPaint.setStrokeJoin(Paint.Join.ROUND); // jointures between elements of path
+        mPathPaint.setStrokeCap(Paint.Cap.ROUND); // start and end of path
     }
 
     /*
@@ -166,38 +121,44 @@ public class TouchDisplayView extends View {
 
             // Do subfunctions for each in the future
             case MotionEvent.ACTION_DOWN: {
+                // if an animation is ongoing, we stop it
+                mIsAnimationDrawing = false;
                 // first pressed gesture has started
-                mHasTouch = true;
+                mIsDrawing = true;
+
+                // we initialize the array and the path
+                mPathsToDraw.clear();
+                mPath = new Path();
+
                 // we generate a random number (make sure it positive)
                 int random = new Random().nextInt();
                 random = Math.max(random, -1*random);
                 // we determine the color
                 mColor = COLORS[random % COLORS.length];
                 // we apply the color to the circle and path paints
-                mCirclePaint.setColor(mColor);
                 mPathPaint.setColor(mColor);
-                // we add the first point
-                history.add(new TouchHistory(event.getX(), event.getY(), date.getTime()));
-                break;
-            }
 
-            case MotionEvent.ACTION_UP: {
-                mHasTouch = false;
-                // we empty the list
-                history.clear();
-                pathHistory.clear();
+                // we apply the new element to the path
+                mPath.moveTo(event.getX(), event.getY());
+                mPathsToDraw.add(mPath);
                 break;
             }
 
             case MotionEvent.ACTION_MOVE: {
-                // we add the new event
-                history.add(new TouchHistory(event.getX(), event.getY(), date.getTime()));
+                mPath.lineTo(event.getX(), event.getY());
+                break;
+            }
 
-                // and the new path event
-                TouchHistory beforeLast = history.get(history.size() - 2);
-                PathHistory newPath = new PathHistory(beforeLast.getX(), beforeLast.getY(), event.getX(), event.getY());
-                pathHistory.add(newPath);
-                System.out.println(newPath);
+            case MotionEvent.ACTION_UP: {
+                // we stopped to draw and will start to animate
+                mIsDrawing = false;
+                mIsAnimationDrawing = true;
+
+                // we create the pathMeasure for our path
+                mPathMeasure = new PathMeasure(mPathsToDraw.get(0), false);
+                // and we start the chrono
+                mChrono = java.lang.System.currentTimeMillis();
+
                 break;
             }
         }
@@ -214,51 +175,61 @@ public class TouchDisplayView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // draw inactive border
-        canvas.drawRect(mBorderWidth, mBorderWidth, getWidth() - mBorderWidth, getHeight()
-                - mBorderWidth, mBorderPaint);
+        if (mIsAnimationDrawing) {
+            long currentTime = java.lang.System.currentTimeMillis();
+            int numberOfPathsToDraw = 1 + (int)(((currentTime - mChrono) * ANIMATION_SPEED) / 1000);
+            float length = (int) mPathMeasure.getLength();
 
-        // Canvas background color depends on whether there is an active touch
-        if (mHasTouch) {
-            for (TouchHistory point : history) {
-                canvas.drawCircle(point.getX(), point.getY(), mRadius, mCirclePaint);
+            // we draw the right amount of paths
+            if (numberOfPathsToDraw < length) {
+                mSegment = new Path();
+                mPathMeasure.getSegment(0, numberOfPathsToDraw, mSegment, true);
+                canvas.drawPath(mSegment, mPathPaint);
+            } else { // else the animation is over
+                mIsAnimationDrawing = false;
+                // we draw the paths anyway
+                for (Path path: mPathsToDraw) {
+                    canvas.drawPath(path, mPathPaint);
+                }
             }
-
-            for (PathHistory path : pathHistory) {
-                canvas.save();
-                canvas.rotate(path.getRotation() * (float) Math.PI / 180, path.getX(), path.getY() + mRadius);
-                canvas.drawRect(path.getX(), path.getY(), path.getWidth(), path.getHeight(), mPathPaint);
-                canvas.restore();
+            this.postInvalidate();
+        } else {
+            for (Path path: mPathsToDraw) {
+                canvas.drawPath(path, mPathPaint);
             }
         }
     }
 
-    /*
-     * Below are only helper methods and variables required for drawing.
+    /**
+     * Triggered method when the application is paused
      */
+    public void pause() {
+
+    }
 
     /**
-     * Sets up the required {@link android.graphics.Paint} objects for the screen density of this
-     * device.
+     * Triggered method when the application is resumed after paused
      */
-    private void initialisePaint() {
-        // Calculate radius in px from dp based on screen density
+    public void resume() {
 
-        // Initialize Circle Paint
-        float density = getResources().getDisplayMetrics().density;
-        mCircleRadius = CIRCLE_RADIUS_DP * density;
-        mRadius = PRESSURE * mCircleRadius;
+    }
 
-        // Initialize Path Paint
-        mPathWidth = CIRCLE_RADIUS_DP * 2 * density;
-        mPathPaint.setStrokeWidth(mPathWidth);
-        mPathPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+    /**
+     * Method called by the main activity when changing the value on the seekbar
+     * @param progress new thickness value
+     */
+    public void updatePathThickness(int progress) {
+        PATH_THICKNESS = progress;
+        mPathThickness = PATH_THICKNESS * DENSITY;
+        mPathPaint.setStrokeWidth(mPathThickness);
+    }
 
-        // Setup paint for inactive border
-        mBorderWidth = INACTIVE_BORDER_DP * density;
-        mBorderPaint.setStrokeWidth(mBorderWidth);
-        mBorderPaint.setColor(INACTIVE_BORDER_COLOR);
-        mBorderPaint.setStyle(Paint.Style.STROKE);
+    /**
+     * Method called by the main activity when changing the value of animation speed
+     * @param progress new animation speed value
+     */
+    public void updateAnimationSpeed(int progress) {
+        ANIMATION_SPEED = progress;
     }
 }
 

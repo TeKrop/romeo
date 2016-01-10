@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Prototype Phil</string>
+    <string name="thickness">Epaisseur du trait</string>
 </resources>
