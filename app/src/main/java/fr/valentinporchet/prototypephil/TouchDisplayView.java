@@ -1,19 +1,4 @@
 package fr.valentinporchet.prototypephil;
-/*
- * Copyright (C) 2013 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -23,16 +8,13 @@ import android.graphics.PathMeasure;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.SeekBar;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 
 /**
- * View that shows touch events and their history. This view demonstrates the
- * use of {@link #onTouchEvent(android.view.MotionEvent)} and {@link android.view.MotionEvent}s to keep
- * track of touch pointers across events.
+ * View that shows touch events and their history via animations.
  */
 public class TouchDisplayView extends View {
     /**
@@ -61,15 +43,14 @@ public class TouchDisplayView extends View {
     private Date mDate = new Date();
 
     // containers of paths to draw and to animate
-    private ArrayList<Path> mPathsToDraw = new ArrayList<Path>();
+    private ArrayList<Path> mPathsToDraw = new ArrayList<>();
 
     // variables for the path
     private float mPathThickness; // thickness of the path
-    private int mColor; // color of the path
     private Paint mPathPaint = new Paint();
 
     // temp variables
-    private Path mPath = null, mSegment = null;
+    private Path mPath = null, mSegment = new Path();
 
     // measure of path, need it in order to animate
     private PathMeasure mPathMeasure = null;
@@ -83,8 +64,6 @@ public class TouchDisplayView extends View {
     public TouchDisplayView(Context context, AttributeSet attrs) {
         super(context, attrs);
         initialisePaint();
-
-
     }
 
     /**
@@ -114,8 +93,7 @@ public class TouchDisplayView extends View {
 
         /*
          * Switch on the action. The action is extracted from the event by
-         * applying the MotionEvent.ACTION_MASK. Alternatively a call to
-         * event.getActionMasked() would yield in the action as well.
+         * applying the MotionEvent.ACTION_MASK.
          */
         switch (action & MotionEvent.ACTION_MASK) {
 
@@ -134,17 +112,19 @@ public class TouchDisplayView extends View {
                 int random = new Random().nextInt();
                 random = Math.max(random, -1*random);
                 // we determine the color
-                mColor = COLORS[random % COLORS.length];
+                int mColor = COLORS[random % COLORS.length];
                 // we apply the color to the circle and path paints
                 mPathPaint.setColor(mColor);
 
                 // we apply the new element to the path
                 mPath.moveTo(event.getX(), event.getY());
                 mPathsToDraw.add(mPath);
+
                 break;
             }
 
             case MotionEvent.ACTION_MOVE: {
+                // just add a line toward the new position
                 mPath.lineTo(event.getX(), event.getY());
                 break;
             }
@@ -175,16 +155,18 @@ public class TouchDisplayView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        // if we are drawing an animation
         if (mIsAnimationDrawing) {
+            // we calculate the number of paths to draw depending on when we started the animation
             long currentTime = java.lang.System.currentTimeMillis();
             int numberOfPathsToDraw = 1 + (int)(((currentTime - mChrono) * ANIMATION_SPEED) / 1000);
             float length = (int) mPathMeasure.getLength();
 
             // we draw the right amount of paths
             if (numberOfPathsToDraw < length) {
-                mSegment = new Path();
-                mPathMeasure.getSegment(0, numberOfPathsToDraw, mSegment, true);
-                canvas.drawPath(mSegment, mPathPaint);
+                mSegment.rewind(); // we empty the segment path
+                mPathMeasure.getSegment(0, numberOfPathsToDraw, mSegment, true); // we add the right path to the segment
+                canvas.drawPath(mSegment, mPathPaint); // we draw it
             } else { // else the animation is over
                 mIsAnimationDrawing = false;
                 // we draw the paths anyway
@@ -192,8 +174,10 @@ public class TouchDisplayView extends View {
                     canvas.drawPath(path, mPathPaint);
                 }
             }
+            // trigger the redraw if it is an animation,
+            // since we are not triggered any touch event
             this.postInvalidate();
-        } else {
+        } else { // else we just draw the path
             for (Path path: mPathsToDraw) {
                 canvas.drawPath(path, mPathPaint);
             }
