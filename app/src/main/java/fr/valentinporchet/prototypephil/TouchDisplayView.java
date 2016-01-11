@@ -206,6 +206,12 @@ public class TouchDisplayView extends View {
         PATH_THICKNESS = progress;
         mPathThickness = PATH_THICKNESS * DENSITY;
         mPathPaint.setStrokeWidth(mPathThickness);
+
+        // if the animation is not running, we trigger
+        // the redrawing of the view
+        if (!mIsAnimationDrawing) {
+            this.postInvalidate();
+        }
     }
 
     /**
