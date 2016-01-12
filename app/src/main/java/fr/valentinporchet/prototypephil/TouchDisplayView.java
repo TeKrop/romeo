@@ -10,7 +10,6 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Random;
 
 /**
@@ -21,7 +20,6 @@ public class TouchDisplayView extends View {
      * Public variables and constants
      */
     public static float PATH_THICKNESS = 15f; // thickness (without DENSITY of screen)
-    public static int ANIMATION_SPEED = 1000; // paths per second
 
     /**
      * Private constants
@@ -31,7 +29,6 @@ public class TouchDisplayView extends View {
             0xFF33B5E5, 0xFFAA66CC, 0xFF99CC00, 0xFFFFBB33, 0xFFFF4444,
             0xFF0099CC, 0xFF9933CC, 0xFF669900, 0xFFFF8800, 0xFFCC0000
     };
-    private final int BACKGROUND_COLOR = 0xFFFFFFFF;
 
     /**
      * Private variables
@@ -40,21 +37,44 @@ public class TouchDisplayView extends View {
     // main variables
     private boolean mIsDrawing = false;
     private boolean mIsAnimationDrawing = false;
-    private Date mDate = new Date();
+    private boolean mAnimationDone = true;
 
     // containers of paths to draw and to animate
-    private ArrayList<Path> mPathsToDraw = new ArrayList<>();
+    private ArrayList<TouchData> mTouchData = new ArrayList<>();
 
     // variables for the path
     private float mPathThickness; // thickness of the path
     private Paint mPathPaint = new Paint();
 
     // temp variables
-    private Path mPath = null, mSegment = new Path();
+    private Path mSegment = new Path();
 
-    // measure of path, need it in order to animate
+    // variables used for animation of paths
     private PathMeasure mPathMeasure = null;
     private long mChrono = 0;
+    private float mSegmentOfPathToDraw;
+    private int count;
+    private int currentPath; // contains the current path ID
+
+    /**
+     * Public structures
+     */
+
+    /**
+     * Class used to store data about touch events
+     */
+    class TouchData {
+        public Path mPath = new Path();
+        public ArrayList<Float> mTempPathLengths = new ArrayList<>();
+        public ArrayList<Float> mTimeForPaths = new ArrayList<>();
+
+        @Override
+        public String toString() {
+            return "TouchData{" +
+                    ", mTimeForPaths=" + mTimeForPaths +
+                    '}';
+        }
+    }
 
     /**
      * Constructor of the TouchDisplayView class
@@ -104,40 +124,47 @@ public class TouchDisplayView extends View {
                 // first pressed gesture has started
                 mIsDrawing = true;
 
-                // we initialize the array and the path
-                mPathsToDraw.clear();
-                mPath = new Path();
+                // if we did the animation
+                if (mAnimationDone) {
+                    mTouchData.clear();
 
-                // we generate a random number (make sure it positive)
-                int random = new Random().nextInt();
-                random = Math.max(random, -1*random);
-                // we determine the color
-                int mColor = COLORS[random % COLORS.length];
-                // we apply the color to the circle and path paints
-                mPathPaint.setColor(mColor);
+                    // we generate a random number (make sure it positive)
+                    int random = new Random().nextInt();
+                    random = Math.max(random, -1*random);
+                    // we determine the color
+                    int mColor = COLORS[random % COLORS.length];
+                    // we apply the color to the circle and path paints
+                    mPathPaint.setColor(mColor);
 
-                // we apply the new element to the path
-                mPath.moveTo(event.getX(), event.getY());
-                mPathsToDraw.add(mPath);
+                    // we initialize the chrono
+                    mChrono = java.lang.System.currentTimeMillis();
+
+                    mAnimationDone = false;
+                }
+
+                // we add a new touchdata
+                mTouchData.add(new TouchData());
+
+                // we apply the first position to the path
+                mTouchData.get(mTouchData.size()-1).mPath.moveTo(event.getX(), event.getY());
 
                 break;
             }
 
             case MotionEvent.ACTION_MOVE: {
                 // just add a line toward the new position
-                mPath.lineTo(event.getX(), event.getY());
+                mTouchData.get(mTouchData.size()-1).mPath.lineTo(event.getX(), event.getY());
+                // and the time of the event
+                mTouchData.get(mTouchData.size()-1).mTimeForPaths.add((float) java.lang.System.currentTimeMillis() - mChrono);
+                // and the current length of the path
+                mTouchData.get(mTouchData.size()-1).mTempPathLengths.add(new PathMeasure(mTouchData.get(mTouchData.size()-1).mPath, false).getLength());
+
                 break;
             }
 
             case MotionEvent.ACTION_UP: {
-                // we stopped to draw and will start to animate
-                mIsDrawing = false;
-                mIsAnimationDrawing = true;
-
                 // we create the pathMeasure for our path
-                mPathMeasure = new PathMeasure(mPathsToDraw.get(0), false);
-                // and we start the chrono
-                mChrono = java.lang.System.currentTimeMillis();
+                //mPathMeasure = new PathMeasure(mTouchData.get(0).mPath, false);
 
                 break;
             }
@@ -159,27 +186,53 @@ public class TouchDisplayView extends View {
         if (mIsAnimationDrawing) {
             // we calculate the number of paths to draw depending on when we started the animation
             long currentTime = java.lang.System.currentTimeMillis();
-            int numberOfPathsToDraw = 1 + (int)(((currentTime - mChrono) * ANIMATION_SPEED) / 1000);
-            float length = (int) mPathMeasure.getLength();
+
+            // if the time that passed is superior to the last amount we have to reach, then
+            // we are in a new step of the movement : we update the segment to draw with the value
+            // saved for this time in mTempPathLengths
+            if ((mTouchData.get(currentPath).mTimeForPaths.size() > count) && (currentTime - mChrono > mTouchData.get(currentPath).mTimeForPaths.get(count))) {
+                mSegmentOfPathToDraw = mTouchData.get(currentPath).mTempPathLengths.get(count);
+                count++;
+            }
 
             // we draw the right amount of paths
-            if (numberOfPathsToDraw < length) {
+            if (mSegmentOfPathToDraw < mPathMeasure.getLength()) {
+                // first we draw the previous finished paths (if there are any)
+                for (int i=0; i < currentPath; i++) {
+                    canvas.drawPath(mTouchData.get(i).mPath, mPathPaint);
+                }
+                // then we draw the segment of the current animated path
                 mSegment.rewind(); // we empty the segment path
-                mPathMeasure.getSegment(0, numberOfPathsToDraw, mSegment, true); // we add the right path to the segment
+                mPathMeasure.getSegment(0, mSegmentOfPathToDraw, mSegment, true); // we add the right path to the segment
                 canvas.drawPath(mSegment, mPathPaint); // we draw it
-            } else { // else the animation is over
-                mIsAnimationDrawing = false;
-                // we draw the paths anyway
-                for (Path path: mPathsToDraw) {
-                    canvas.drawPath(path, mPathPaint);
+            } else { // else the animation of the path is over
+                // if it's not the last path, we will draw the next one next time
+                if (currentPath < mTouchData.size()-1) {
+                    currentPath++;
+                    // then we reassign correct values to temp variables
+                    mPathMeasure = new PathMeasure(mTouchData.get(currentPath).mPath, false);
+                    mSegmentOfPathToDraw = 0;
+                    count = 0;
+                    // we draw the finished paths anyway
+                    for (int i=0; i < currentPath; i++) {
+                        canvas.drawPath(mTouchData.get(i).mPath, mPathPaint);
+                    }
+                } else { // else we finished to draw the whole animation
+                    mIsAnimationDrawing = false;
+                    mAnimationDone = true;
+                    for (TouchData touchData: mTouchData) {
+                        canvas.drawPath(touchData.mPath, mPathPaint);
+                    }
                 }
             }
             // trigger the redraw if it is an animation,
             // since we are not triggered any touch event
             this.postInvalidate();
         } else { // else we just draw the path
-            for (Path path: mPathsToDraw) {
-                canvas.drawPath(path, mPathPaint);
+            if (!mTouchData.isEmpty()) {
+                for (TouchData touchData : mTouchData) {
+                    canvas.drawPath(touchData.mPath, mPathPaint);
+                }
             }
         }
     }
@@ -215,11 +268,25 @@ public class TouchDisplayView extends View {
     }
 
     /**
-     * Method called by the main activity when changing the value of animation speed
-     * @param progress new animation speed value
+     * Method called when the button is pressed, in order to launch
+     * the animation process
      */
-    public void updateAnimationSpeed(int progress) {
-        ANIMATION_SPEED = progress;
+    public void launchAnimation() {
+        // we stopped to draw
+        mIsDrawing = false;
+        mIsAnimationDrawing = true;
+
+        // and we start the chrono for the animation
+        mChrono = java.lang.System.currentTimeMillis();
+        mPathMeasure = new PathMeasure(mTouchData.get(0).mPath, false);
+
+        // and we initialize the number of paths to draw
+        mSegmentOfPathToDraw = 0;
+        count = 0;
+        currentPath = 0;
+
+        // trigger the drawing
+        this.postInvalidate();
     }
 }
 

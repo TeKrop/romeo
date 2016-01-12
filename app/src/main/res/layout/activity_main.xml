@@ -15,21 +15,30 @@
     <fr.valentinporchet.prototypephil.TouchDisplayView
         android:id="@+id/touch_display_view"
         android:layout_width="wrap_content"
-        android:layout_height="339dp"
+        android:layout_height="wrap_content"
         android:layout_weight="0.94" />
 
-    <SeekBar
-        android:id="@+id/thickness_seek_bar"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:max="50"/>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <SeekBar
-        android:id="@+id/animation_seek_bar"
-        android:layout_width="fill_parent"
-        android:layout_marginTop="10dp"
-        android:layout_height="wrap_content"
-        android:max="50"/>
+        <SeekBar
+            android:id="@+id/thickness_seek_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="50"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="37dp"
+            android:text="@string/animate"
+            android:id="@+id/animate_button"
+            android:layout_gravity="right" />
+
+    </LinearLayout>
+
 
 </LinearLayout>
 

@@ -2,8 +2,10 @@ package fr.valentinporchet.prototypephil;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.SeekBar;
 
 public class MainActivity extends Activity {
@@ -11,8 +13,8 @@ public class MainActivity extends Activity {
     private TouchDisplayView mTouchView;
     // seekbar for path thickness
     private SeekBar mPathThicknessController = null;
-    // seekbar for animation speed
-    private SeekBar mAnimationSpeedController = null;
+    // button to launch animation
+    private Button mAnimateButton = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +29,7 @@ public class MainActivity extends Activity {
         // initialisation of touch view and relation to seekbar
         mTouchView = (TouchDisplayView) findViewById(R.id.touch_display_view);
         initializeSeekBars();
+        initializeButtons();
     }
 
     /**
@@ -54,26 +57,14 @@ public class MainActivity extends Activity {
                 // ...
             }
         });
+    }
 
-        // initialize the seekbar for animation speed
-        mAnimationSpeedController = (SeekBar) findViewById(R.id.animation_seek_bar);
-        mAnimationSpeedController.setMax(3000);
-        mAnimationSpeedController.setProgress(TouchDisplayView.ANIMATION_SPEED);
-
-        mAnimationSpeedController.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+    private void initializeButtons() {
+        mAnimateButton = (Button) findViewById(R.id.animate_button);
+        mAnimateButton.setOnClickListener(new Button.OnClickListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mTouchView.updateAnimationSpeed(progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                // ...
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // ...
+            public void onClick(View v) {
+                mTouchView.launchAnimation();
             }
         });
     }
