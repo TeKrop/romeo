@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageButton;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,6 +77,15 @@ public class MainActivity extends Activity {
                 }
             });
         }
+
+        // Initialisation of the eraser button
+        ImageButton eraserButton = (ImageButton) findViewById(R.id.eraser_button);
+        eraserButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mTouchView.activeEraseMode();
+            }
+        });
     }
 
     @Override

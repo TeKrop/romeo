@@ -5,9 +5,12 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
+import android.graphics.RectF;
+import android.graphics.Region;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -25,9 +28,9 @@ public class TouchDisplayView extends View {
      */
 
     // main variables
-    private boolean mIsDrawing = false;
     private boolean mIsAnimationDrawing = false;
     private boolean mAnimationDone = true;
+    private boolean mIsEraseModeOn = false;
 
     // containers of paths to draw and to animate
     private ArrayList<TouchData> mTouchData = new ArrayList<>();
@@ -104,39 +107,59 @@ public class TouchDisplayView extends View {
             case MotionEvent.ACTION_DOWN: {
                 // if an animation is ongoing, we stop it
                 mIsAnimationDrawing = false;
-                // first pressed gesture has started
-                mIsDrawing = true;
 
-                // if we did the animation
-                if (mAnimationDone) {
-                    // we reinitialize the touch data
-                    mTouchData.clear();
-                    mAnimationDone = false;
+                // if we are on erase mode, we detected if we touched a path
+                if (mIsEraseModeOn) {
+                    int dataToErase = -1; // value used if we must delete a path
 
-                    // we initialize the chrono
-                    mChrono = java.lang.System.currentTimeMillis();
+                    // for all the drawed paths
+                    for (int i=0; i < mTouchData.size(); i++) {
+                        // if we touched the current path, we save the
+                        if (touchedPath(mTouchData.get(i).mPath, event.getX(), event.getY())) {
+                            dataToErase = i;
+                            break; // we stop the for loop as we found a path to erase
+                        }
+                    }
+
+                    // if the value is different from -1, we found a path
+                    // to erase, we delete it from the list
+                    if (dataToErase != -1) {
+                        mTouchData.remove(dataToErase);
+                    }
+                } else {
+                    // if we did the animation
+                    if (mAnimationDone) {
+                        // we reinitialize the touch data
+                        mTouchData.clear();
+                        mAnimationDone = false;
+
+                        // we initialize the chrono
+                        mChrono = java.lang.System.currentTimeMillis();
+                    }
+
+                    // we add a new touchdata
+                    mTouchData.add(new TouchData());
+
+                    // we apply the first position to the path
+                    mTouchData.get(mTouchData.size()-1).mPath.moveTo(event.getX(), event.getY());
+
+                    // and we apply the selected color and selected thickness
+                    mTouchData.get(mTouchData.size()-1).mPathColor = mLastSelectedColor;
+                    mTouchData.get(mTouchData.size()-1).mPathThickness = mLastSelectedThickness * DENSITY;
                 }
-
-                // we add a new touchdata
-                mTouchData.add(new TouchData());
-
-                // we apply the first position to the path
-                mTouchData.get(mTouchData.size()-1).mPath.moveTo(event.getX(), event.getY());
-
-                // and we apply the selected color and selected thickness
-                mTouchData.get(mTouchData.size()-1).mPathColor = mLastSelectedColor;
-                mTouchData.get(mTouchData.size()-1).mPathThickness = mLastSelectedThickness * DENSITY;
 
                 break;
             }
 
             case MotionEvent.ACTION_MOVE: {
-                // just add a line toward the new position
-                mTouchData.get(mTouchData.size()-1).mPath.lineTo(event.getX(), event.getY());
-                // and the time of the event
-                mTouchData.get(mTouchData.size()-1).mTimeForPaths.add((float) java.lang.System.currentTimeMillis() - mChrono);
-                // and the current length of the path
-                mTouchData.get(mTouchData.size()-1).mTempPathLengths.add(new PathMeasure(mTouchData.get(mTouchData.size()-1).mPath, false).getLength());
+                if (!mIsEraseModeOn) {
+                    // just add a line toward the new position
+                    mTouchData.get(mTouchData.size()-1).mPath.lineTo(event.getX(), event.getY());
+                    // and the time of the event
+                    mTouchData.get(mTouchData.size()-1).mTimeForPaths.add((float) java.lang.System.currentTimeMillis() - mChrono);
+                    // and the current length of the path
+                    mTouchData.get(mTouchData.size()-1).mTempPathLengths.add(new PathMeasure(mTouchData.get(mTouchData.size()-1).mPath, false).getLength());
+                }
 
                 break;
             }
@@ -152,6 +175,30 @@ public class TouchDisplayView extends View {
         // trigger redraw on UI thread
         this.postInvalidate();
         return true;
+    }
+
+    /**
+     * Used to check if a touched point is in a path
+     * @param path Path to check
+     * @param eventX X pos of touch event
+     * @param eventY Y pos of touch event
+     * @return true if the point is in the path
+     */
+    private boolean touchedPath(Path path, float eventX, float eventY) {
+        // we make a bounding rectangle
+        RectF rectF = new RectF();
+        path.computeBounds(rectF, true);
+
+        // we make a region based on the path and contained in the rectangle
+        Region r = new Region();
+        r.setPath(path, new Region((int) rectF.left, (int) rectF.top, (int) rectF.right, (int) rectF.bottom));
+
+        // we make another region for the touching area
+        Region touch = new Region();
+        touch.set((int) eventX - 20, (int) eventY - 20, (int) eventX + 20, (int) eventY + 20);
+
+        // we just return if the regions are colliding each other
+        return r.op(touch, Region.Op.INTERSECT);
     }
 
     /*
@@ -249,12 +296,18 @@ public class TouchDisplayView extends View {
      * @param color value of the new color
      */
     public void setSelectedColor(int color) {
+        mIsEraseModeOn = false; // we deactivate the erase mode
         mLastSelectedColor = color;
     }
 
     public void setSelectedThickness(int size) {
+        mIsEraseModeOn = false; // we deactivate the erase mode
         mLastSelectedThickness = size; // thickness of path
         mPathPaint.setStrokeWidth(mLastSelectedThickness ); // applied with the density of the screen
+    }
+
+    public void activeEraseMode() {
+        mIsEraseModeOn = true;
     }
 
     /**
@@ -262,20 +315,23 @@ public class TouchDisplayView extends View {
      * the animation process
      */
     public void launchAnimation() {
-        // we stopped to draw
-        mIsDrawing = false;
-        mIsAnimationDrawing = true;
+        // if there is no drawing, we display an error notification
+        if (mTouchData.isEmpty()) {
+            Toast.makeText(getContext(), "Error : no drawing to animate", Toast.LENGTH_LONG).show();
+        } else { // else we animate !
+            mIsAnimationDrawing = true;
 
-        // and we start the chrono for the animation
-        mChrono = java.lang.System.currentTimeMillis();
-        mPathMeasure = new PathMeasure(mTouchData.get(0).mPath, false);
+            // and we start the chrono for the animation
+            mChrono = java.lang.System.currentTimeMillis();
+            mPathMeasure = new PathMeasure(mTouchData.get(0).mPath, false);
 
-        // and we initialize the number of paths to draw
-        mSegmentOfPathToDraw = 0;
-        count = 0;
-        currentPath = 0;
+            // and we initialize the number of paths to draw
+            mSegmentOfPathToDraw = 0;
+            count = 0;
+            currentPath = 0;
 
-        // trigger the drawing
-        this.postInvalidate();
+            // trigger the drawing
+            this.postInvalidate();
+        }
     }
 }
