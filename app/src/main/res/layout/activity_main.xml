@@ -23,13 +23,6 @@
         android:layout_height="0dp"
         android:layout_weight="0.2" >
 
-        <SeekBar
-            android:id="@+id/thickness_seek_bar"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="4"
-            android:max="50" />
-
         <Button
             android:id="@+id/animate_button"
             android:layout_width="0dp"
@@ -107,6 +100,36 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/btn_yellow" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight=".15"
+        android:weightSum="7.5">
+
+        <ImageButton
+            android:id="@+id/small_size_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/btn_small" />
+
+        <ImageButton
+            android:id="@+id/normal_size_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/btn_normal" />
+
+        <ImageButton
+            android:id="@+id/big_size_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/btn_big" />
 
     </LinearLayout>
 

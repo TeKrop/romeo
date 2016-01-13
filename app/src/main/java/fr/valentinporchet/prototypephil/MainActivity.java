@@ -1,14 +1,11 @@
 package fr.valentinporchet.prototypephil;
 
 import android.app.Activity;
-import android.media.Image;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.SeekBar;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,35 +26,7 @@ public class MainActivity extends Activity {
 
         // initialisation of touch view and relation to seekbar
         mTouchView = (TouchDisplayView) findViewById(R.id.touch_display_view);
-        initializeSeekBars();
         initializeButtons();
-    }
-
-    /**
-     * Method used to initialize the SeekBar for thickness
-     */
-    private void initializeSeekBars() {
-        // Initialization of thickness seekBar
-        SeekBar pathThicknessController = (SeekBar) findViewById(R.id.thickness_seek_bar);
-        pathThicknessController.setProgress((int) TouchDisplayView.PATH_THICKNESS);
-
-        pathThicknessController.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // we call the method in the view in order to update the thickness
-                mTouchView.updatePathThickness(progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                // ...
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // ...
-            }
-        });
     }
 
     private void initializeButtons() {
@@ -88,6 +57,22 @@ public class MainActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     mTouchView.setSelectedColor(value);
+                }
+            });
+        }
+
+        // Initialisation of size buttons with hashmap <button_id, size>
+        Map<Integer, Integer> sizes = new HashMap<>();
+        sizes.put(R.id.small_size_button, 10);
+        sizes.put(R.id.normal_size_button, 20);
+        sizes.put(R.id.big_size_button, 30);
+
+        for (Map.Entry<Integer, Integer> entry : sizes.entrySet()) {
+            final int value = entry.getValue();
+            findViewById(entry.getKey()).setOnClickListener(new Button.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mTouchView.setSelectedThickness(value);
                 }
             });
         }
