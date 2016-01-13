@@ -1,20 +1,21 @@
 package fr.valentinporchet.prototypephil;
 
 import android.app.Activity;
+import android.media.Image;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.SeekBar;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends Activity {
     // TouchDisplayView
     private TouchDisplayView mTouchView;
-    // seekbar for path thickness
-    private SeekBar mPathThicknessController = null;
-    // button to launch animation
-    private Button mAnimateButton = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,10 +38,10 @@ public class MainActivity extends Activity {
      */
     private void initializeSeekBars() {
         // Initialization of thickness seekBar
-        mPathThicknessController = (SeekBar) findViewById(R.id.thickness_seek_bar);
-        mPathThicknessController.setProgress((int) TouchDisplayView.PATH_THICKNESS);
+        SeekBar pathThicknessController = (SeekBar) findViewById(R.id.thickness_seek_bar);
+        pathThicknessController.setProgress((int) TouchDisplayView.PATH_THICKNESS);
 
-        mPathThicknessController.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        pathThicknessController.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 // we call the method in the view in order to update the thickness
@@ -60,13 +61,36 @@ public class MainActivity extends Activity {
     }
 
     private void initializeButtons() {
-        mAnimateButton = (Button) findViewById(R.id.animate_button);
-        mAnimateButton.setOnClickListener(new Button.OnClickListener() {
+        Button animateButton = (Button) findViewById(R.id.animate_button);
+        animateButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mTouchView.launchAnimation();
             }
         });
+
+        // Initialisation of color buttons with hashmap <button_id, color>
+        Map<Integer, Integer> colors = new HashMap<>();
+        colors.put(R.id.black_button, 0xFF000000);
+        colors.put(R.id.blue_button, 0xFF0000FF);
+        colors.put(R.id.cyan_button, 0xFF00FFFF);
+        colors.put(R.id.green_button, 0xFF00FF00);
+        colors.put(R.id.orange_button, 0xFFFF8000);
+        colors.put(R.id.pink_button, 0xFFFF0080);
+        colors.put(R.id.purple_button, 0xFF8000FF);
+        colors.put(R.id.red_button, 0xFFFF0000);
+        colors.put(R.id.yellow_button, 0xFFFFFF00);
+
+        // we iterate the hashmap above, in order to add the click listeners on buttons
+        for (Map.Entry<Integer, Integer> entry : colors.entrySet()) {
+            final int value = entry.getValue();
+            findViewById(entry.getKey()).setOnClickListener(new Button.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mTouchView.setSelectedColor(value);
+                }
+            });
+        }
     }
 
     @Override

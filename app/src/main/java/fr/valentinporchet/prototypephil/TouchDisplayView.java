@@ -45,6 +45,7 @@ public class TouchDisplayView extends View {
     // variables for the path
     private float mPathThickness; // thickness of the path
     private Paint mPathPaint = new Paint();
+    private int mLastSelectedColor = 0xFF33B5E5; // black by default
 
     // temp variables
     private Path mSegment = new Path();
@@ -67,13 +68,7 @@ public class TouchDisplayView extends View {
         public Path mPath = new Path();
         public ArrayList<Float> mTempPathLengths = new ArrayList<>();
         public ArrayList<Float> mTimeForPaths = new ArrayList<>();
-
-        @Override
-        public String toString() {
-            return "TouchData{" +
-                    ", mTimeForPaths=" + mTimeForPaths +
-                    '}';
-        }
+        public int mColor;
     }
 
     /**
@@ -126,20 +121,12 @@ public class TouchDisplayView extends View {
 
                 // if we did the animation
                 if (mAnimationDone) {
+                    // we reinitialize the touch data
                     mTouchData.clear();
-
-                    // we generate a random number (make sure it positive)
-                    int random = new Random().nextInt();
-                    random = Math.max(random, -1*random);
-                    // we determine the color
-                    int mColor = COLORS[random % COLORS.length];
-                    // we apply the color to the circle and path paints
-                    mPathPaint.setColor(mColor);
+                    mAnimationDone = false;
 
                     // we initialize the chrono
                     mChrono = java.lang.System.currentTimeMillis();
-
-                    mAnimationDone = false;
                 }
 
                 // we add a new touchdata
@@ -147,6 +134,9 @@ public class TouchDisplayView extends View {
 
                 // we apply the first position to the path
                 mTouchData.get(mTouchData.size()-1).mPath.moveTo(event.getX(), event.getY());
+
+                // and we apply the selected color
+                mTouchData.get(mTouchData.size()-1).mColor = mLastSelectedColor;
 
                 break;
             }
@@ -199,11 +189,15 @@ public class TouchDisplayView extends View {
             if (mSegmentOfPathToDraw < mPathMeasure.getLength()) {
                 // first we draw the previous finished paths (if there are any)
                 for (int i=0; i < currentPath; i++) {
+                    // we set the color of the current path, and then we draw it
+                    mPathPaint.setColor(mTouchData.get(i).mColor);
                     canvas.drawPath(mTouchData.get(i).mPath, mPathPaint);
                 }
                 // then we draw the segment of the current animated path
                 mSegment.rewind(); // we empty the segment path
                 mPathMeasure.getSegment(0, mSegmentOfPathToDraw, mSegment, true); // we add the right path to the segment
+                // we apply the current color of last path
+                mPathPaint.setColor(mTouchData.get(currentPath).mColor);
                 canvas.drawPath(mSegment, mPathPaint); // we draw it
             } else { // else the animation of the path is over
                 // if it's not the last path, we will draw the next one next time
@@ -215,22 +209,25 @@ public class TouchDisplayView extends View {
                     count = 0;
                     // we draw the finished paths anyway
                     for (int i=0; i < currentPath; i++) {
+                        mPathPaint.setColor(mTouchData.get(i).mColor);
                         canvas.drawPath(mTouchData.get(i).mPath, mPathPaint);
                     }
                 } else { // else we finished to draw the whole animation
                     mIsAnimationDrawing = false;
                     mAnimationDone = true;
                     for (TouchData touchData: mTouchData) {
+                        mPathPaint.setColor(touchData.mColor);
                         canvas.drawPath(touchData.mPath, mPathPaint);
                     }
                 }
             }
             // trigger the redraw if it is an animation,
-            // since we are not triggered any touch event
+            // since we are not triggering any touch event
             this.postInvalidate();
         } else { // else we just draw the path
             if (!mTouchData.isEmpty()) {
                 for (TouchData touchData : mTouchData) {
+                    mPathPaint.setColor(touchData.mColor);
                     canvas.drawPath(touchData.mPath, mPathPaint);
                 }
             }
@@ -265,6 +262,14 @@ public class TouchDisplayView extends View {
         if (!mIsAnimationDrawing) {
             this.postInvalidate();
         }
+    }
+
+    /**
+     * Method called by the main activity in order to change the color to apply for the next path
+     * @param color value of the new color
+     */
+    public void setSelectedColor(int color) {
+        mLastSelectedColor = color;
     }
 
     /**
