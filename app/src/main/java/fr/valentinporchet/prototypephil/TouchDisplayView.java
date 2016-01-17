@@ -56,7 +56,7 @@ public class TouchDisplayView extends View {
     /**
      * Class used to store data about touch events (one path)
      */
-    class TouchData {
+    public class TouchData {
         public Path mPath = new Path(); // the path
         public ArrayList<Float> mTempPathLengths = new ArrayList<>(); // array containing path length at each move event
         public ArrayList<Long> mTimeForPaths = new ArrayList<>(); // array containing time elapsed at each move event
@@ -90,8 +90,6 @@ public class TouchDisplayView extends View {
      * device.
      */
     private void initialisePaint() {
-        this.setWillNotDraw(false);
-
         // Initialize Path Paint
         mPathPaint.setStrokeWidth(mLastSelectedThickness * DENSITY); // thickness of path
 
@@ -99,6 +97,11 @@ public class TouchDisplayView extends View {
         mPathPaint.setStyle(Paint.Style.STROKE); // style of path
         mPathPaint.setStrokeJoin(Paint.Join.ROUND); // jointures between elements of path
         mPathPaint.setStrokeCap(Paint.Cap.ROUND); // start and end of path
+    }
+
+    // Getter for touch data
+    public ArrayList<TouchData> getTouchData() {
+        return this.mTouchData;
     }
 
     /***************** EVENT FUNCTIONS *****************/

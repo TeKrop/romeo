@@ -8,12 +8,15 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends Activity {
-    // TouchDisplayView
     private TouchDisplayView mTouchView;
+    private ServerSocket serverSocket;
+    private Thread socketThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,14 +31,33 @@ public class MainActivity extends Activity {
         // initialisation of touch view and relation to seekbar
         mTouchView = (TouchDisplayView) findViewById(R.id.touch_display_view);
         initializeButtons();
+
+        // Code for server
+        //socketThread = new Thread(new ServerThread(serverSocket));
+
+        // Code for client
+        socketThread = new Thread(new ClientThread());
+
+        // we start the socket
+        socketThread.start();
     }
 
     private void initializeButtons() {
+        // Initialisation of animate button
         Button animateButton = (Button) findViewById(R.id.animate_button);
         animateButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mTouchView.launchAnimation();
+            }
+        });
+
+        // Initialisation of share button
+        Button shareButton = (Button) findViewById(R.id.share_button);
+        shareButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //socketThread.send(mTouchView.getTouchData());
             }
         });
 
@@ -100,5 +122,16 @@ public class MainActivity extends Activity {
         // TODO Auto-generated method stub
         super.onResume();
         //mTouchView.resume();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        try {
+            // make sure you close the socket upon exiting
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
