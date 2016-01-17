@@ -8,6 +8,7 @@ import android.graphics.PathMeasure;
 import android.graphics.RectF;
 import android.graphics.Region;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -42,7 +43,7 @@ public class TouchDisplayView extends View {
 
     // variables used for animation of paths
     private Path mSegment = new Path();
-    private PathMeasure mPathMeasure = null;
+    private PathMeasure mPathMeasure = new PathMeasure();
     private long mChrono = 0;
     private float mSegmentOfPathToDraw;
     private int count;
@@ -58,9 +59,20 @@ public class TouchDisplayView extends View {
     class TouchData {
         public Path mPath = new Path(); // the path
         public ArrayList<Float> mTempPathLengths = new ArrayList<>(); // array containing path length at each move event
-        public ArrayList<Float> mTimeForPaths = new ArrayList<>(); // array containing time elapsed at each move event
+        public ArrayList<Long> mTimeForPaths = new ArrayList<>(); // array containing time elapsed at each move event
         public int mPathColor; // color of the path
         public float mPathThickness; // size of the path
+
+        @Override
+        public String toString() {
+            return "TouchData{" +
+                    "mPath=" + mPath +
+                    ", mTempPathLengths=" + mTempPathLengths +
+                    ", mTimeForPaths=" + mTimeForPaths +
+                    ", mPathColor=" + mPathColor +
+                    ", mPathThickness=" + mPathThickness +
+                    '}';
+        }
     }
 
     /**
@@ -78,7 +90,7 @@ public class TouchDisplayView extends View {
      * device.
      */
     private void initialisePaint() {
-        // Calculate radius in px from dp based on screen density
+        this.setWillNotDraw(false);
 
         // Initialize Path Paint
         mPathPaint.setStrokeWidth(mLastSelectedThickness * DENSITY); // thickness of path
@@ -89,6 +101,8 @@ public class TouchDisplayView extends View {
         mPathPaint.setStrokeCap(Paint.Cap.ROUND); // start and end of path
     }
 
+    /***************** EVENT FUNCTIONS *****************/
+
     /*
      * Main event handling function
      */
@@ -96,6 +110,8 @@ public class TouchDisplayView extends View {
     public boolean onTouchEvent(MotionEvent event) {
 
         final int action = event.getAction();
+        final float x = event.getX();
+        final float y = event.getY();
 
         /*
          * Switch on the action. The action is extracted from the event by
@@ -105,69 +121,31 @@ public class TouchDisplayView extends View {
 
             // Do subfunctions for each in the future
             case MotionEvent.ACTION_DOWN: {
+                Log.i("TouchDisplayView", "Touching down...");
                 // if an animation is ongoing, we stop it
                 mIsAnimationDrawing = false;
 
                 // if we are on erase mode, we detected if we touched a path
                 if (mIsEraseModeOn) {
-                    int dataToErase = -1; // value used if we must delete a path
-
-                    // for all the drawed paths
-                    for (int i=0; i < mTouchData.size(); i++) {
-                        // if we touched the current path, we save the
-                        if (touchedPath(mTouchData.get(i).mPath, event.getX(), event.getY())) {
-                            dataToErase = i;
-                            break; // we stop the for loop as we found a path to erase
-                        }
-                    }
-
-                    // if the value is different from -1, we found a path
-                    // to erase, we delete it from the list
-                    if (dataToErase != -1) {
-                        mTouchData.remove(dataToErase);
-                    }
+                    Log.i("TouchDisplayView", "... with eraser mode on.");
+                    this.onTouchDownEraserOn(x, y);
                 } else {
-                    // if we did the animation
-                    if (mAnimationDone) {
-                        // we reinitialize the touch data
-                        mTouchData.clear();
-                        mAnimationDone = false;
-
-                        // we initialize the chrono
-                        mChrono = java.lang.System.currentTimeMillis();
-                    }
-
-                    // we add a new touchdata
-                    mTouchData.add(new TouchData());
-
-                    // we apply the first position to the path
-                    mTouchData.get(mTouchData.size()-1).mPath.moveTo(event.getX(), event.getY());
-
-                    // and we apply the selected color and selected thickness
-                    mTouchData.get(mTouchData.size()-1).mPathColor = mLastSelectedColor;
-                    mTouchData.get(mTouchData.size()-1).mPathThickness = mLastSelectedThickness * DENSITY;
+                    Log.i("TouchDisplayView", "... with drawer mode on.");
+                    this.onTouchDownDrawerOn(x, y);
                 }
-
                 break;
             }
 
             case MotionEvent.ACTION_MOVE: {
-                if (!mIsEraseModeOn) {
-                    // just add a line toward the new position
-                    mTouchData.get(mTouchData.size()-1).mPath.lineTo(event.getX(), event.getY());
-                    // and the time of the event
-                    mTouchData.get(mTouchData.size()-1).mTimeForPaths.add((float) java.lang.System.currentTimeMillis() - mChrono);
-                    // and the current length of the path
-                    mTouchData.get(mTouchData.size()-1).mTempPathLengths.add(new PathMeasure(mTouchData.get(mTouchData.size()-1).mPath, false).getLength());
-                }
-
+                Log.v("TouchDisplayView", "Moving on " + x + "," + y);
+                this.onMoveTouch(x, y);
                 break;
             }
 
             case MotionEvent.ACTION_UP: {
-                // we create the pathMeasure for our path
-                //mPathMeasure = new PathMeasure(mTouchData.get(0).mPath, false);
-
+                Log.i("TouchDisplayView", "Releasing...");
+                // For debugging purpose, we display the tab
+                Log.v("TouchDisplayView", "Data : " + mTouchData);
                 break;
             }
         }
@@ -175,6 +153,29 @@ public class TouchDisplayView extends View {
         // trigger redraw on UI thread
         this.postInvalidate();
         return true;
+    }
+
+    /**
+     * Function called when we are touching down with eraser mode on
+     * @param x x touching coordinates
+     * @param y y touching coordinates
+     */
+    private void onTouchDownEraserOn(float x, float y) {
+        int dataToErase = -1; // value used if we must delete a path
+        // for all the drawed paths
+        for (int i=0; i < mTouchData.size(); i++) {
+            // if we touched the current path, we save the
+            if (touchedPath(mTouchData.get(i).mPath, x, y)) {
+                dataToErase = i;
+                break; // we stop the for loop as we found a path to erase
+            }
+        }
+        // if the value is different from -1, we found a path
+        // to erase, we delete it from the list
+        if (dataToErase != -1) {
+            Log.i("TouchDisplayView", "Path found, erasing it...");
+            mTouchData.remove(dataToErase);
+        }
     }
 
     /**
@@ -201,6 +202,52 @@ public class TouchDisplayView extends View {
         return r.op(touch, Region.Op.INTERSECT);
     }
 
+    /**
+     * Function called when we are touching down with drawer mode on
+     * @param x x touching coordinates
+     * @param y y touching coordinates
+     */
+    private void onTouchDownDrawerOn(float x, float y) {
+        // if we did the animation
+        if (mAnimationDone) {
+            // we reinitialize the touch data
+            mTouchData.clear();
+            mAnimationDone = false;
+
+            // we initialize the chrono
+            mChrono = java.lang.System.currentTimeMillis();
+        }
+
+        // we add a new touchdata
+        mTouchData.add(new TouchData());
+
+        // we apply the first position to the path
+        mTouchData.get(mTouchData.size()-1).mPath.moveTo(x, y);
+
+        // and we apply the selected color and selected thickness
+        mTouchData.get(mTouchData.size()-1).mPathColor = mLastSelectedColor;
+        mTouchData.get(mTouchData.size()-1).mPathThickness = mLastSelectedThickness * DENSITY;
+    }
+
+    /**
+     * Function called when moving and already touching the area
+     * @param x x touching coordinates
+     * @param y y touching coordinates
+     */
+    private void onMoveTouch(float x, float y) {
+        // if we are not on mode eraser, we update the current path
+        if (!mIsEraseModeOn) {
+            // just add a line toward the new position
+            mTouchData.get(mTouchData.size()-1).mPath.lineTo(x, y);
+            // and the time of the event
+            mTouchData.get(mTouchData.size()-1).mTimeForPaths.add(java.lang.System.currentTimeMillis() - mChrono);
+            // and the current length of the path
+            mTouchData.get(mTouchData.size()-1).mTempPathLengths.add(new PathMeasure(mTouchData.get(mTouchData.size()-1).mPath, false).getLength());
+        }
+    }
+
+    /***************** DRAWING FUNCTIONS *****************/
+
     /*
      * Main drawing function
      */
@@ -221,38 +268,32 @@ public class TouchDisplayView extends View {
                 count++;
             }
 
+            Log.v("TouchDisplayView", "mSegmentOfPathToDraw : " + mSegmentOfPathToDraw);
+            Log.v("TouchDisplayView", "count : " + count);
+
             // we draw the right amount of paths
             if (mSegmentOfPathToDraw < mPathMeasure.getLength()) {
                 // first we draw the previous finished paths (if there are any)
-                for (int i=0; i < currentPath; i++) {
-                    // we set the color of the current path, and then we draw it
-                    mPathPaint.setColor(mTouchData.get(i).mPathColor);
-                    mPathPaint.setStrokeWidth(mTouchData.get(i).mPathThickness);
-                    canvas.drawPath(mTouchData.get(i).mPath, mPathPaint);
-                }
-                // then we draw the segment of the current animated path
-                mSegment.rewind(); // we empty the segment path
-                mPathMeasure.getSegment(0, mSegmentOfPathToDraw, mSegment, true); // we add the right path to the segment
+                this.drawFinishedPaths(canvas);
 
                 // we apply the current color and thickness of last path
                 mPathPaint.setColor(mTouchData.get(currentPath).mPathColor);
                 mPathPaint.setStrokeWidth(mTouchData.get(currentPath).mPathThickness);
 
+                // then we draw the segment of the current animated path
+                mSegment.rewind(); // we empty the segment path
+                mPathMeasure.getSegment(0, mSegmentOfPathToDraw, mSegment, true); // we add the right path to the segment
                 canvas.drawPath(mSegment, mPathPaint); // we draw it
             } else { // else the animation of the path is over
                 // if it's not the last path, we will draw the next one next time
                 if (currentPath < mTouchData.size()-1) {
                     currentPath++;
                     // then we reassign correct values to temp variables
-                    mPathMeasure = new PathMeasure(mTouchData.get(currentPath).mPath, false);
+                    mPathMeasure.setPath(mTouchData.get(currentPath).mPath, false);
                     mSegmentOfPathToDraw = 0;
                     count = 0;
                     // we draw the finished paths anyway
-                    for (int i=0; i < currentPath; i++) {
-                        mPathPaint.setColor(mTouchData.get(i).mPathColor);
-                        mPathPaint.setStrokeWidth(mTouchData.get(i).mPathThickness);
-                        canvas.drawPath(mTouchData.get(i).mPath, mPathPaint);
-                    }
+                    this.drawFinishedPaths(canvas);
                 } else { // else we finished to draw the whole animation
                     mIsAnimationDrawing = false;
                     mAnimationDone = true;
@@ -263,10 +304,8 @@ public class TouchDisplayView extends View {
                     }
                 }
             }
-            // trigger the redraw if it is an animation,
-            // since we are not triggering any touch event
             this.postInvalidate();
-        } else { // else we just draw the path
+        } else { // else we just draw the paths
             if (!mTouchData.isEmpty()) {
                 for (TouchData touchData : mTouchData) {
                     mPathPaint.setColor(touchData.mPathColor);
@@ -278,18 +317,19 @@ public class TouchDisplayView extends View {
     }
 
     /**
-     * Triggered method when the application is paused
+     * Just draw the previous paths on the canvas (depending on current path)
+     * @param canvas Canvas in which we draw
      */
-    public void pause() {
-
+    private void drawFinishedPaths(Canvas canvas) {
+        for (int i=0; i < currentPath; i++) {
+            // we set the color of the current path, and then we draw it
+            mPathPaint.setColor(mTouchData.get(i).mPathColor);
+            mPathPaint.setStrokeWidth(mTouchData.get(i).mPathThickness);
+            canvas.drawPath(mTouchData.get(i).mPath, mPathPaint);
+        }
     }
 
-    /**
-     * Triggered method when the application is resumed after paused
-     */
-    public void resume() {
-
-    }
+    /***************** PUBLIC METHODS *****************/
 
     /**
      * Method called by the main activity in order to change the color to apply for the next path
@@ -330,7 +370,6 @@ public class TouchDisplayView extends View {
             count = 0;
             currentPath = 0;
 
-            // trigger the drawing
             this.postInvalidate();
         }
     }
