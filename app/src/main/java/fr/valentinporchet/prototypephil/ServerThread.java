@@ -3,13 +3,13 @@ package fr.valentinporchet.prototypephil;
 import android.os.Handler;
 import android.util.Log;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 public class ServerThread implements Runnable {
@@ -18,10 +18,13 @@ public class ServerThread implements Runnable {
     private int SERVER_PORT = 8080;
     private Handler handler = new Handler();
     private ServerSocket serverSocket;
+    private ArrayList<TouchData> received;
+    private TouchDisplayView touchView;
 
-    public ServerThread(ServerSocket serverSocket) {
+    public ServerThread(ServerSocket serverSocket, TouchDisplayView touchView) {
         super();
         this.serverSocket = serverSocket;
+        this.touchView = touchView;
     }
 
     @Override
@@ -46,18 +49,18 @@ public class ServerThread implements Runnable {
                     });
 
                     try {
-                        BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                        String line = null;
-                        while ((line = in.readLine()) != null) {
-                            Log.d("ServerActivity", line);
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    // do whatever you want to the front end
-                                    // this is where you can be creative
-                                }
-                            });
-                        }
+                        Log.v("ServerHandler", "Waiting...");
+                        ObjectInputStream in = new ObjectInputStream(client.getInputStream());
+                        received = (ArrayList<TouchData>) in.readObject();
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.i("ServerHandler", "New data received ! Animating...");
+                                // we launch the received animation
+                                touchView.launchReceivedAnimation(received);
+                            }
+                        });
+                        in.close();
                         break;
                     } catch (Exception e) {
                         handler.post(new Runnable() {

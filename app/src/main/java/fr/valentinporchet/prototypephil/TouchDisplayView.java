@@ -50,32 +50,6 @@ public class TouchDisplayView extends View {
     private int currentPath; // contains the current path ID
 
     /**
-     * Public structures
-     */
-
-    /**
-     * Class used to store data about touch events (one path)
-     */
-    public class TouchData {
-        public Path mPath = new Path(); // the path
-        public ArrayList<Float> mTempPathLengths = new ArrayList<>(); // array containing path length at each move event
-        public ArrayList<Long> mTimeForPaths = new ArrayList<>(); // array containing time elapsed at each move event
-        public int mPathColor; // color of the path
-        public float mPathThickness; // size of the path
-
-        @Override
-        public String toString() {
-            return "TouchData{" +
-                    "mPath=" + mPath +
-                    ", mTempPathLengths=" + mTempPathLengths +
-                    ", mTimeForPaths=" + mTimeForPaths +
-                    ", mPathColor=" + mPathColor +
-                    ", mPathThickness=" + mPathThickness +
-                    '}';
-        }
-    }
-
-    /**
      * Constructor of the TouchDisplayView class
      * @param context Context
      * @param attrs Attributes
@@ -271,11 +245,13 @@ public class TouchDisplayView extends View {
                 count++;
             }
 
-            Log.v("TouchDisplayView", "mSegmentOfPathToDraw : " + mSegmentOfPathToDraw);
-            Log.v("TouchDisplayView", "count : " + count);
+            Log.v("TouchDisplayView", "mSegmentToDraw = " + mSegmentOfPathToDraw);
+            Log.v("TouchDisplayView", "count = " + count);
+            Log.v("TouchDisplayView", "mPathMeasure length = " + mPathMeasure.getLength());
 
-            // we draw the right amount of paths
-            if (mSegmentOfPathToDraw < mPathMeasure.getLength()) {
+            // we draw the right amount of paths. Cast to int in order to avoid bugs
+            // when the segment to draw is almost equal to the length of the path measure
+            if ((int)mSegmentOfPathToDraw < (int)mPathMeasure.getLength()) {
                 // first we draw the previous finished paths (if there are any)
                 this.drawFinishedPaths(canvas);
 
@@ -286,6 +262,7 @@ public class TouchDisplayView extends View {
                 // then we draw the segment of the current animated path
                 mSegment.rewind(); // we empty the segment path
                 mPathMeasure.getSegment(0, mSegmentOfPathToDraw, mSegment, true); // we add the right path to the segment
+                mSegment.rLineTo(0, 0); // workaround for KITKAT and earlier versions, see the doc of getSegment()
                 canvas.drawPath(mSegment, mPathPaint); // we draw it
             } else { // else the animation of the path is over
                 // if it's not the last path, we will draw the next one next time
@@ -375,5 +352,17 @@ public class TouchDisplayView extends View {
 
             this.postInvalidate();
         }
+    }
+
+    /**
+     * Method called to launch a received animation by network
+     */
+    public void launchReceivedAnimation(ArrayList<TouchData> data) {
+        // we just replace the current data by the received data, and launch the animation
+        mTouchData = data;
+        for (TouchData d : mTouchData) {
+            Log.v("TouchDisplayView", "Data : " + d);
+        }
+        launchAnimation();
     }
 }

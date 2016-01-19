@@ -8,7 +8,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +15,7 @@ import java.util.Map;
 public class MainActivity extends Activity {
     private TouchDisplayView mTouchView;
     private ServerSocket serverSocket;
+    private ClientThread clientThread;
     private Thread socketThread;
 
     @Override
@@ -33,10 +33,11 @@ public class MainActivity extends Activity {
         initializeButtons();
 
         // Code for server
-        //socketThread = new Thread(new ServerThread(serverSocket));
+        //socketThread = new Thread(new ServerThread(serverSocket, mTouchView));
 
         // Code for client
-        socketThread = new Thread(new ClientThread());
+        clientThread = new ClientThread();
+        socketThread = new Thread(clientThread);
 
         // we start the socket
         socketThread.start();
@@ -57,7 +58,16 @@ public class MainActivity extends Activity {
         shareButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //socketThread.send(mTouchView.getTouchData());
+                clientThread.send(mTouchView.getTouchData());
+            }
+        });
+
+        // Initialisation of options button
+        Button optionsButton = (Button) findViewById(R.id.options_button);
+        optionsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // go to the new options activity
             }
         });
 
@@ -127,11 +137,11 @@ public class MainActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
-        try {
+        /*try {
             // make sure you close the socket upon exiting
             serverSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 }
