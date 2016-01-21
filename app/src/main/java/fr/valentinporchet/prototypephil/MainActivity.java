@@ -1,12 +1,15 @@
 package fr.valentinporchet.prototypephil;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import java.net.ServerSocket;
 import java.util.HashMap;
@@ -14,6 +17,7 @@ import java.util.Map;
 
 public class MainActivity extends Activity {
     private TouchDisplayView mTouchView;
+    private SwipeView mSwipeView;
     private ServerSocket serverSocket;
     private ClientThread clientThread;
     private Thread socketThread;
@@ -32,6 +36,9 @@ public class MainActivity extends Activity {
         mTouchView = (TouchDisplayView) findViewById(R.id.touch_display_view);
         initializeButtons();
 
+        mSwipeView = (SwipeView) findViewById(R.id.swipe_view);
+        initializeSwipeView();
+
         // Code for server
         //socketThread = new Thread(new ServerThread(serverSocket, mTouchView));
 
@@ -41,6 +48,12 @@ public class MainActivity extends Activity {
 
         // we start the socket
         socketThread.start();
+    }
+
+    private void startSettingsActivity(View v) {
+        // go to the new options activity
+        Intent i = new Intent(this, SettingsActivity.class);
+        startActivity(i); // we start the settings activity
     }
 
     private void initializeButtons() {
@@ -53,21 +66,12 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Initialisation of share button
-        Button shareButton = (Button) findViewById(R.id.share_button);
-        shareButton.setOnClickListener(new Button.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                clientThread.send(mTouchView.getTouchData());
-            }
-        });
-
         // Initialisation of options button
         Button optionsButton = (Button) findViewById(R.id.options_button);
         optionsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // go to the new options activity
+                startSettingsActivity(v);
             }
         });
 
@@ -116,6 +120,32 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 mTouchView.activeEraseMode();
+            }
+        });
+    }
+
+    private void initializeSwipeView() {
+        // we add the FlingGestureListener, in order to add the sending event on swiping
+        mSwipeView.setOnTouchListener(new FlingGestureListener() {
+            @Override
+            public void onRightToLeft() {
+                Log.i("SwipeViewActivity", "swipe rightToLeft");
+            }
+
+            @Override
+            public void onLeftToRight() {
+                Log.i("SwipeViewActivity", "swipe leftToRight");
+                clientThread.send(mTouchView.getTouchData()); // send the data
+            }
+
+            @Override
+            public void onBottomToTop() {
+                Log.i("SwipeViewActivity", "bottomToTop");
+            }
+
+            @Override
+            public void onTopToBottom() {
+                Log.i("SwipeViewActivity", "topToBottom");
             }
         });
     }

@@ -360,9 +360,6 @@ public class TouchDisplayView extends View {
     public void launchReceivedAnimation(ArrayList<TouchData> data) {
         // we just replace the current data by the received data, and launch the animation
         mTouchData = data;
-        for (TouchData d : mTouchData) {
-            Log.v("TouchDisplayView", "Data : " + d);
-        }
         launchAnimation();
     }
 }

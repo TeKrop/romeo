@@ -1,9 +1,5 @@
 package fr.valentinporchet.prototypephil;
 
-/**
- * Created by Valentin on 19/01/2016.
- */
-
 import java.io.Serializable;
 import java.util.ArrayList;
 

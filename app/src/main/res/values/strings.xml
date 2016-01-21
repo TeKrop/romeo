@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Prototype Phil</string>
-    <string name="animate">Animate</string>
-    <string name="share">Share</string>
+    <string name="animate">Animer</string>
     <string name="options">Options</string>
+    <string name="pref_connectionType">Type de connexion</string>
+    <string name="pref_connectionTypes_default">Serveur</string>
+    <string name="pref_connections">Connexions</string>
+    <string name="server_ip">IP du serveur</string>
 </resources>
