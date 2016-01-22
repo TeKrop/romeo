@@ -39,7 +39,7 @@ public class TouchDisplayView extends View {
 
     // variables for the path
     private Paint mPathPaint = new Paint();
-    private int mLastSelectedColor = 0xFF000000; // black by default
+    private int mLastSelectedColor = 0xFF242424; // black by default
 
     // variables used for animation of paths
     private Path mSegment = new Path();

@@ -76,15 +76,10 @@ public class MainActivity extends Activity {
 
         // Initialisation of color buttons with hashmap <button_id, color>
         Map<Integer, Integer> colors = new HashMap<>();
-        colors.put(R.id.black_button, 0xFF000000);
-        colors.put(R.id.blue_button, 0xFF0000FF);
-        colors.put(R.id.cyan_button, 0xFF00FFFF);
-        colors.put(R.id.green_button, 0xFF00FF00);
-        colors.put(R.id.orange_button, 0xFFFF8000);
-        colors.put(R.id.pink_button, 0xFFFF0080);
-        colors.put(R.id.purple_button, 0xFF8000FF);
-        colors.put(R.id.red_button, 0xFFFF0000);
-        colors.put(R.id.yellow_button, 0xFFFFFF00);
+        colors.put(R.id.black_button, 0xFF242424);
+        colors.put(R.id.red_button, 0xFFC31D40);
+        colors.put(R.id.green_button, 0xFF2EC196);
+        colors.put(R.id.blue_button, 0xFF272F80);
 
         // we iterate the hashmap above, in order to add the click listeners on buttons
         for (Map.Entry<Integer, Integer> entry : colors.entrySet()) {
@@ -108,29 +103,31 @@ public class MainActivity extends Activity {
     }
 
     private void initializeSwipeView() {
-        // we add the FlingGestureListener, in order to add the sending event on swiping
-        mSwipeView.setOnTouchListener(new FlingGestureListener() {
-            @Override
-            public void onRightToLeft() {
-                Log.i("SwipeViewActivity", "swipe rightToLeft");
-            }
+        if (mSwipeView != null) {
+            // we add the FlingGestureListener, in order to add the sending event on swiping
+            mSwipeView.setOnTouchListener(new FlingGestureListener() {
+                @Override
+                public void onRightToLeft() {
+                    Log.i("SwipeViewActivity", "swipe rightToLeft");
+                }
 
-            @Override
-            public void onLeftToRight() {
-                Log.i("SwipeViewActivity", "swipe leftToRight");
-                clientThread.send(mTouchView.getTouchData()); // send the data
-            }
+                @Override
+                public void onLeftToRight() {
+                    Log.i("SwipeViewActivity", "swipe leftToRight");
+                    clientThread.send(mTouchView.getTouchData()); // send the data
+                }
 
-            @Override
-            public void onBottomToTop() {
-                Log.i("SwipeViewActivity", "bottomToTop");
-            }
+                @Override
+                public void onBottomToTop() {
+                    Log.i("SwipeViewActivity", "bottomToTop");
+                }
 
-            @Override
-            public void onTopToBottom() {
-                Log.i("SwipeViewActivity", "topToBottom");
-            }
-        });
+                @Override
+                public void onTopToBottom() {
+                    Log.i("SwipeViewActivity", "topToBottom");
+                }
+            });
+        }
     }
 
     @Override
