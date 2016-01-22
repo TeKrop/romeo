@@ -1,4 +1,4 @@
-package fr.valentinporchet.prototypephil;
+package fr.valentinporchet.romeo;
 
 import org.junit.Test;
 

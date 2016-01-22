@@ -5,7 +5,7 @@ android {
     buildToolsVersion "23.0.1"
 
     defaultConfig {
-        applicationId "fr.valentinporchet.prototypephil"
+        applicationId "fr.valentinporchet.romeo"
         minSdkVersion 15
         targetSdkVersion 23
         versionCode 1
