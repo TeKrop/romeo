@@ -39,14 +39,8 @@ public class MainActivity extends Activity {
         initializeSwipeView();
 
         // Code for server
-        mSocketThread = new Thread(new ServerThread(mServerSocket, mTouchView));
-
-        // Code for client
-        //mClientThread = new ClientThread();
-        //mSocketThread = new Thread(mClientThread);
-
-        // we start the socket
-        mSocketThread.start();
+        //mSocketThread = new Thread(new ServerThread(mServerSocket, mTouchView));
+        //mSocketThread.start();
     }
 
     private void startSettingsActivity(View v) {
@@ -124,7 +118,11 @@ public class MainActivity extends Activity {
                 @Override
                 public void onLeftToRight() {
                     Log.i("SwipeViewActivity", "swipe leftToRight");
-                    mClientThread.send(mTouchView.getTouchData()); // send the data
+                    // we create the new client thread with the data
+                    mClientThread = new ClientThread(mTouchView.getTouchData());
+                    // then we start it
+                    mSocketThread = new Thread(mClientThread);
+                    mSocketThread.start(); // we start the thread
                 }
 
                 @Override

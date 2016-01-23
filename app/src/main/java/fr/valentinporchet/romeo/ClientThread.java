@@ -10,10 +10,15 @@ import java.util.ArrayList;
 public class ClientThread implements Runnable {
 
     private boolean connected = false;
-    private String SERVER_ADDRESS = "192.168.1.45";
+    private String SERVER_ADDRESS = "192.168.1.47";
     private int SERVER_PORT = 8080;
     private Socket socket;
     private InetAddress serverAddr;
+    private ArrayList<TouchData> mDataToSend;
+
+    public ClientThread(ArrayList<TouchData> touchData) {
+        mDataToSend = touchData;
+    }
 
     @Override
     public void run() {
@@ -24,16 +29,16 @@ public class ClientThread implements Runnable {
             connected = true;
 
             while (connected) {
-                /*try {
-                    Log.d("ClientActivity", "C: Sending command.");
-                    PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket
-                            .getOutputStream())), true);
-                    // where you issue the commands
-                    out.println("Hey Server!");
+                try {
+                    Log.d("ClientActivity", "C: Sending data.");
+                    ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                    out.writeObject(mDataToSend);
+                    out.close();
                     Log.d("ClientActivity", "C: Sent.");
+                    connected = false; // we then close the connection
                 } catch (Exception e) {
                     Log.e("ClientActivity", "S: Error", e);
-                }*/
+                }
             }
 
             socket.close();
@@ -41,19 +46,6 @@ public class ClientThread implements Runnable {
         } catch (Exception e) {
             Log.e("ClientActivity", "C: Error", e);
             connected = false;
-        }
-    }
-
-    public void send(ArrayList<TouchData> touchData) {
-        try {
-            Log.d("ClientActivity", "C: Sending command.");
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            // where you issue the commands
-            out.writeObject(touchData);
-            out.close();
-            Log.d("ClientActivity", "C: Sent.");
-        } catch (Exception e) {
-            Log.e("ClientActivity", "S: Error", e);
         }
     }
 }
