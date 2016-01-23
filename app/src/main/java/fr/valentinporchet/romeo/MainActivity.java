@@ -17,9 +17,9 @@ import java.util.Map;
 public class MainActivity extends Activity {
     private TouchDisplayView mTouchView;
     private SwipeView mSwipeView;
-    private ServerSocket serverSocket;
-    private ClientThread clientThread;
-    private Thread socketThread;
+    private ServerSocket mServerSocket;
+    private ClientThread mClientThread;
+    private Thread mSocketThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,14 +39,14 @@ public class MainActivity extends Activity {
         initializeSwipeView();
 
         // Code for server
-        //socketThread = new Thread(new ServerThread(serverSocket, mTouchView));
+        mSocketThread = new Thread(new ServerThread(mServerSocket, mTouchView));
 
         // Code for client
-        clientThread = new ClientThread();
-        socketThread = new Thread(clientThread);
+        //mClientThread = new ClientThread();
+        //mSocketThread = new Thread(mClientThread);
 
         // we start the socket
-        socketThread.start();
+        mSocketThread.start();
     }
 
     private void startSettingsActivity(View v) {
@@ -94,10 +94,20 @@ public class MainActivity extends Activity {
         
         // Initialisation of the eraser button
         ImageButton eraserButton = (ImageButton) findViewById(R.id.eraser_button);
+        // On simple click, just erase the last path
         eraserButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mTouchView.activeEraseMode();
+                Log.i("MainActivity", "Erasing last path");
+                mTouchView.eraseLastPath();
+            }
+        });
+        // On long click, erase all
+        eraserButton.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                Log.i("MainActivity", "Erasing all paths");
+                return mTouchView.eraseAllPaths();
             }
         });
     }
@@ -114,7 +124,7 @@ public class MainActivity extends Activity {
                 @Override
                 public void onLeftToRight() {
                     Log.i("SwipeViewActivity", "swipe leftToRight");
-                    clientThread.send(mTouchView.getTouchData()); // send the data
+                    mClientThread.send(mTouchView.getTouchData()); // send the data
                 }
 
                 @Override
@@ -149,7 +159,7 @@ public class MainActivity extends Activity {
         super.onStop();
         /*try {
             // make sure you close the socket upon exiting
-            serverSocket.close();
+            mServerSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }*/

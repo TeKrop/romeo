@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public class ClientThread implements Runnable {
 
     private boolean connected = false;
-    private String SERVER_ADDRESS = "192.168.1.47";
+    private String SERVER_ADDRESS = "192.168.1.45";
     private int SERVER_PORT = 8080;
     private Socket socket;
     private InetAddress serverAddr;
