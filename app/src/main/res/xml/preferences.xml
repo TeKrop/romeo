@@ -2,16 +2,18 @@
 <PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory
-        android:title="@string/pref_connections"
-        android:key="pref_key_connections">
+    <EditTextPreference
+        android:key="preference_penpal_IP"
+        android:title="@string/penpal_ip"
+        android:dialogTitle="@string/penpal_ip"
+        android:defaultValue="192.168.1.1"/>
 
-        <EditTextPreference
-            android:key="pref_serverIp"
-            android:title="@string/server_ip"
-            android:dialogTitle="@string/server_ip"
-            android:defaultValue="192.168.1.1" />
-
-    </PreferenceCategory>
+    <ListPreference
+        android:key="preference_gender"
+        android:title="@string/gender"
+        android:entries="@array/genders"
+        android:entryValues="@array/gendersData"
+        android:defaultValue="male"
+        android:summary="%s"/>
 
 </PreferenceScreen>

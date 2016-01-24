@@ -38,7 +38,7 @@ public class ServerThread implements Runnable {
                     }
                 });
                 serverSocket = new ServerSocket(SERVER_PORT);
-                while (true) {
+                while (true) { // server will always be running
                     // listen for incoming clients
                     Socket client = serverSocket.accept();
                     handler.post(new Runnable() {
@@ -61,7 +61,6 @@ public class ServerThread implements Runnable {
                             }
                         });
                         in.close();
-                        break;
                     } catch (Exception e) {
                         handler.post(new Runnable() {
                             @Override

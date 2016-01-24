@@ -2,14 +2,14 @@
     <string name="app_name">Roméo</string>
     <string name="animate">Animer</string>
     <string name="options">Options</string>
-    <string name="pref_connectionType">Type de connexion</string>
-    <string name="pref_connectionTypes_default">Serveur</string>
-    <string name="pref_connections">Connexions</string>
-    <string name="server_ip">IP du serveur</string>
+    <string name="penpal_ip">Adresse IP du correspondant</string>
     <string name="description_black_button">Black Button</string>
     <string name="description_red_button">Red Button</string>
     <string name="description_green_button">Green Button</string>
     <string name="description_blue_button">Blue Button</string>
     <string name="description_eraser">Eraser Button</string>
-    <string name="description_top_left_corner">Top Right Corner</string>
+    <string name="description_top_right_corner">Top Right Corner</string>
+    <string name="gender">Votre genre</string>
+    <string name="male">Masculin</string>
+    <string name="female">Féminin</string>
 </resources>

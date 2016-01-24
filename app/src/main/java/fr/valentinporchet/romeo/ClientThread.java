@@ -10,14 +10,15 @@ import java.util.ArrayList;
 public class ClientThread implements Runnable {
 
     private boolean connected = false;
-    private String SERVER_ADDRESS = "192.168.1.47";
+    private String SERVER_ADDRESS = "192.168.1.1"; // default value
     private int SERVER_PORT = 8080;
     private Socket socket;
     private InetAddress serverAddr;
     private ArrayList<TouchData> mDataToSend;
 
-    public ClientThread(ArrayList<TouchData> touchData) {
+    public ClientThread(ArrayList<TouchData> touchData, String serverIP) {
         mDataToSend = touchData;
+        SERVER_ADDRESS = serverIP;
     }
 
     @Override

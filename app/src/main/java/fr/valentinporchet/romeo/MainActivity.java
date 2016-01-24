@@ -2,13 +2,16 @@ package fr.valentinporchet.romeo;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 
 import java.net.ServerSocket;
 import java.util.HashMap;
@@ -19,7 +22,9 @@ public class MainActivity extends Activity {
     private SwipeView mSwipeView;
     private ServerSocket mServerSocket;
     private ClientThread mClientThread;
-    private Thread mSocketThread;
+    private Thread mServerSocketThread;
+    private Thread mClientSocketThread;
+    private SharedPreferences sharedPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +44,15 @@ public class MainActivity extends Activity {
         initializeSwipeView();
 
         // Code for server
-        //mSocketThread = new Thread(new ServerThread(mServerSocket, mTouchView));
-        //mSocketThread.start();
+        mServerSocketThread = new Thread(new ServerThread(mServerSocket, mTouchView));
+        mServerSocketThread.start();
+
+        // initialisation of settings
+        sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        initializePrefListener();
+
+        // depending on the value, display the right gender icon
+        updateGenderIcon();
     }
 
     private void startSettingsActivity(View v) {
@@ -118,11 +130,11 @@ public class MainActivity extends Activity {
                 @Override
                 public void onLeftToRight() {
                     Log.i("SwipeViewActivity", "swipe leftToRight");
-                    // we create the new client thread with the data
-                    mClientThread = new ClientThread(mTouchView.getTouchData());
+                    // we create the new client thread with the data and the server IP in preferences
+                    mClientThread = new ClientThread(mTouchView.getTouchData(), sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
                     // then we start it
-                    mSocketThread = new Thread(mClientThread);
-                    mSocketThread.start(); // we start the thread
+                    mClientSocketThread = new Thread(mClientThread);
+                    mClientSocketThread.start(); // we start the thread
                 }
 
                 @Override
@@ -136,6 +148,31 @@ public class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    private void initializePrefListener() {
+        // we add a listener here, in order to change the male/female icon
+        sharedPrefs.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if (key.equals("preference_gender")) {
+                    updateGenderIcon();
+                }
+            }
+        });
+    }
+
+    /**
+     * Method called in order to update the gender icon depending on the configuration
+     */
+    public void updateGenderIcon() {
+        ImageView genderIcon = (ImageView) findViewById(R.id.gender_icon);
+        // if we are a male, so the other person is a female, and vice versa
+        int drawableID = R.drawable.top_right_male;
+        if (sharedPrefs.getString("preference_gender", "female").equals("male")) {
+            drawableID = R.drawable.top_right_female;
+        }
+        genderIcon.setBackgroundResource(drawableID);
     }
 
     @Override

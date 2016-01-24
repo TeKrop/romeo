@@ -102,10 +102,7 @@ public class TouchDisplayView extends View {
                 Log.i("TouchDisplayView", "Touching down...");
                 // if an animation is ongoing, we stop it
                 mIsAnimationDrawing = false;
-
-                // if we are on erase mode, we detected if we touched a path
-                Log.i("TouchDisplayView", "... with drawer mode on.");
-                this.onTouchDownDrawerOn(x, y);
+                this.onTouchDown(x, y);
 
                 break;
             }
@@ -134,7 +131,8 @@ public class TouchDisplayView extends View {
      * @param x x touching coordinates
      * @param y y touching coordinates
      */
-    private void onTouchDownDrawerOn(float x, float y) {
+    private void onTouchDown(float x, float y) {
+        Log.v("TouchDisplayView", "TouchData : " + mTouchData);
         // if we did the animation or the touch data is empty
         if ((mAnimationDone)||(mTouchData.isEmpty())) {
             // we reinitialize the touch data
@@ -252,6 +250,7 @@ public class TouchDisplayView extends View {
                         mPathPaint.setStrokeWidth(touchData.mPathThickness);
                         canvas.drawPath(touchData.mPath, mPathPaint);
                     }
+                    Log.i("TouchDisplayView", "Animation done.");
                 }
             }
             this.postInvalidate();
@@ -295,6 +294,8 @@ public class TouchDisplayView extends View {
     public void eraseLastPath() {
         // if there is data on screen
         if (!mTouchData.isEmpty()) {
+            // if an animation is running, we stop it
+            mIsAnimationDrawing = false;
             // we remove the last data in the touch data array
             mTouchData.remove(mTouchData.size()-1);
             // trigger the redraw
@@ -306,6 +307,8 @@ public class TouchDisplayView extends View {
      * Method called to erase all the paths on screen
      */
     public boolean eraseAllPaths() {
+        // if an animation is running, we stop it
+        mIsAnimationDrawing = false;
         // we empty the touch data
         mTouchData.clear();
         // trigger the redraw
@@ -342,6 +345,7 @@ public class TouchDisplayView extends View {
      * Method called to launch a received animation by network
      */
     public void launchReceivedAnimation(ArrayList<TouchData> data) {
+        Log.i("TouchDisplayView", "Launching received data...");
         // we just replace the current data by the received data, and launch the animation
         mTouchData = data;
         launchAnimation();
