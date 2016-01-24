@@ -14,6 +14,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -131,10 +132,15 @@ public class MainActivity extends Activity {
                 public void onLeftToRight() {
                     Log.i("SwipeViewActivity", "swipe leftToRight");
                     // we create the new client thread with the data and the server IP in preferences
-                    mClientThread = new ClientThread(mTouchView.getTouchData(), sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
+                    mClientThread = new ClientThread(new ArrayList<>(mTouchView.getTouchData()),
+                            sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
                     // then we start it
                     mClientSocketThread = new Thread(mClientThread);
                     mClientSocketThread.start(); // we start the thread
+                    // now, we can clear the data on our screen
+                    mTouchView.clearCurrentTouchData();
+                    // then, we launch stored received data if there is any
+                    mTouchView.launchTempStoredAnimation();
                 }
 
                 @Override

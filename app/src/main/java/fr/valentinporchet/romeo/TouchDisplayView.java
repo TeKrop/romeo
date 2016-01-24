@@ -37,6 +37,7 @@ public class TouchDisplayView extends View {
 
     // containers of paths to draw and to animate
     private ArrayList<TouchData> mTouchData = new ArrayList<>();
+    private ArrayList<TouchData> mTempReceivedData = new ArrayList<>();
 
     // variables for the path
     private Paint mPathPaint = new Paint();
@@ -347,7 +348,31 @@ public class TouchDisplayView extends View {
     public void launchReceivedAnimation(ArrayList<TouchData> data) {
         Log.i("TouchDisplayView", "Launching received data...");
         // we just replace the current data by the received data, and launch the animation
-        mTouchData = data;
-        launchAnimation();
+        // if the current data is null. Else, we store the received data in a temp location
+        // in order to display it when the current message has been sent
+
+        if (mTouchData.isEmpty()) {
+            mTouchData = data;
+            launchAnimation();
+        } else {
+            mTempReceivedData = data;
+        }
+    }
+
+    public void clearCurrentTouchData() {
+        mTouchData.clear();
+        this.postInvalidate();
+    }
+
+    /**
+     * Method called to launch animation with temp stored data
+     */
+    public void launchTempStoredAnimation() {
+        // if the received data isn't empty
+        if (!mTempReceivedData.isEmpty()) {
+            mTouchData = new ArrayList<>(mTempReceivedData);
+            mTempReceivedData.clear();
+            launchAnimation();
+        }
     }
 }

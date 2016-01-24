@@ -1,5 +1,7 @@
 package fr.valentinporchet.romeo;
 
+import android.text.method.Touch;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -14,6 +16,15 @@ public class TouchData implements Serializable {
     public ArrayList<Long> mTimeForPaths = new ArrayList<>(); // array containing time elapsed at each move event
     public int mPathColor; // color of the path
     public float mPathThickness; // size of the path
+
+    // copy constructor
+    /*public TouchData(TouchData another) {
+        this.mPath = another.mPath;
+        this.mTempPathLengths = new ArrayList<>(another.mTempPathLengths);
+        this.mTimeForPaths = new ArrayList<>(another.mTimeForPaths);
+        this.mPathColor = another.mPathColor;
+        this.mPathThickness = another.mPathThickness;
+    }*/
 
     @Override
     public String toString() {
