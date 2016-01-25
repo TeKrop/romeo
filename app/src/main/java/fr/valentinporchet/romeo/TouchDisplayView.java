@@ -130,7 +130,7 @@ public class TouchDisplayView extends View {
     }
 
     /**
-     * Function called when we are touching down with drawer mode on
+     * Function called when we are touching down
      * @param x x touching coordinates
      * @param y y touching coordinates
      */
@@ -303,6 +303,10 @@ public class TouchDisplayView extends View {
             mTouchData.remove(mTouchData.size()-1);
             // trigger the redraw
             this.postInvalidate();
+            // if the data is now empty, and we received animation, draw it
+            if (mTouchData.isEmpty()) {
+                launchTempStoredAnimation();
+            }
         }
     }
 
@@ -316,6 +320,8 @@ public class TouchDisplayView extends View {
         mTouchData.clear();
         // trigger the redraw
         this.postInvalidate();
+        // if we received data earlier, draw it
+        launchTempStoredAnimation();
         return true;
     }
 

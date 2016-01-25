@@ -23,16 +23,28 @@ import java.util.Map;
 
 public class MainActivity extends Activity {
     private TouchDisplayView mTouchView;
+    private TouchThroughView mTouchThroughView;
     private SwipeView mSwipeView;
+
     private ServerSocket mServerSocket;
-    private ClientThread mClientThread;
-    private Thread mClientSocketThread;
     private ServerThread mServerThread;
     private Thread mServerSocketThread;
 
+    private ClientThread mClientThread;
+    private Thread mClientSocketThread;
+
+    private TTServerThread mTTServerThread;
+    private Thread mTTServerSocketThread;
+    private ServerSocket mTTServerSocket;
 
     private SharedPreferences sharedPrefs;
     private SharedPreferences.OnSharedPreferenceChangeListener sharedPrefsListener;
+    private Mode currentMode;
+
+    public enum Mode {
+        MESSAGE,
+        TOUCH_THROUGH
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,10 +63,12 @@ public class MainActivity extends Activity {
         mSwipeView = (SwipeView) findViewById(R.id.swipe_view);
         initializeSwipeView();
 
+        mTouchThroughView = (TouchThroughView) findViewById(R.id.touch_through_view);
+
         // initialisation of settings
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-        // Code for server
+        // Code for message server
         mServerThread = new ServerThread(mServerSocket, mTouchView, sharedPrefs.getString("preference_status", "available"));
         mServerSocketThread = new Thread(mServerThread);
         mServerSocketThread.start();
@@ -69,6 +83,9 @@ public class MainActivity extends Activity {
                 } else if (key.equals("preference_status")) {
                     Log.i("MainActivity", "Status changed. Updating server thread...");
                     mServerThread.setStatus(sharedPreferences.getString(key, "available"));
+                } else if (key.equals("preference_penpal_IP")) {
+                    Log.i("MainActivity", "IP changed. Updating server thread...");
+                    mTouchThroughView.setServerIP(sharedPreferences.getString(key, "192.168.1.1"));
                 }
             }
         };
@@ -77,6 +94,17 @@ public class MainActivity extends Activity {
 
         // we add a reference to the letter button to the touch display view
         mTouchView.setLetterButton((ImageButton) findViewById(R.id.letter_button));
+
+        // we set the current mode to MESSAGE
+        currentMode = Mode.MESSAGE;
+
+        // code for touch through server
+        mTTServerThread = new TTServerThread(mTTServerSocket, mTouchThroughView);
+        mTTServerSocketThread = new Thread(mTTServerThread);
+        mTTServerSocketThread.start();
+
+        // and we add the server IP to the client thread of touch through
+        mTouchThroughView.setServerIP(sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
     }
 
     private void startSettingsActivity() {

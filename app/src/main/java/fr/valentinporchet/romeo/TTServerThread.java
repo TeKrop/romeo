@@ -12,20 +12,18 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
-public class ServerThread implements Runnable {
+public class TTServerThread implements Runnable {
     private String SERVER_ADDRESS = getLocalAddress();
-    private int SERVER_PORT = 8080;
+    private int SERVER_PORT = 8181;
     private Handler handler = new Handler();
     private ServerSocket mServerSocket;
-    private ArrayList<TouchData> mReceived;
-    private TouchDisplayView mTouchView;
-    private String mStatus;
+    private TTData mReceived;
+    private TouchThroughView mTouchView;
 
-    public ServerThread(ServerSocket serverSocket, TouchDisplayView touchView, String status) {
+    public TTServerThread(ServerSocket serverSocket, TouchThroughView touchView) {
         super();
         mServerSocket = serverSocket;
         mTouchView = touchView;
-        mStatus = status;
     }
 
     @Override
@@ -52,13 +50,13 @@ public class ServerThread implements Runnable {
                     try {
                         Log.v("ServerHandler", "Waiting...");
                         ObjectInputStream in = new ObjectInputStream(client.getInputStream());
-                        mReceived = (ArrayList<TouchData>) in.readObject();
+                        mReceived = (TTData) in.readObject();
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                Log.i("ServerHandler", "New data received ! Animating...");
+                                Log.i("ServerHandler", "New data received ! Adding the dot...");
                                 // we launch the mReceived animation
-                                mTouchView.launchReceivedAnimation(mReceived, mStatus);
+                                mTouchView.getOtherPosition(mReceived);
                             }
                         });
                         in.close();
@@ -108,9 +106,5 @@ public class ServerThread implements Runnable {
             Log.e("ServerActivity", ex.toString());
         }
         return null;
-    }
-
-    public void setStatus(String status) {
-        mStatus = status;
     }
 }

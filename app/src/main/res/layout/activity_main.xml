@@ -52,7 +52,12 @@
                     android:id="@+id/touch_display_view"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    />
+                    android:visibility="invisible" />
+
+                <fr.valentinporchet.romeo.TouchThroughView
+                    android:id="@+id/touch_through_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
 
                 <ImageButton
                     android:id="@+id/letter_button"
