@@ -17,14 +17,16 @@ public class ServerThread implements Runnable {
     private String SERVER_ADDRESS = getLocalAddress();
     private int SERVER_PORT = 8080;
     private Handler handler = new Handler();
-    private ServerSocket serverSocket;
-    private ArrayList<TouchData> received;
-    private TouchDisplayView touchView;
+    private ServerSocket mServerSocket;
+    private ArrayList<TouchData> mReceived;
+    private TouchDisplayView mTouchView;
+    private String mStatus;
 
-    public ServerThread(ServerSocket serverSocket, TouchDisplayView touchView) {
+    public ServerThread(ServerSocket serverSocket, TouchDisplayView touchView, String status) {
         super();
-        this.serverSocket = serverSocket;
-        this.touchView = touchView;
+        mServerSocket = serverSocket;
+        mTouchView = touchView;
+        mStatus = status;
     }
 
     @Override
@@ -37,10 +39,10 @@ public class ServerThread implements Runnable {
                         Log.i("ServerHandler", "Listening on IP: " + SERVER_ADDRESS);
                     }
                 });
-                serverSocket = new ServerSocket(SERVER_PORT);
+                mServerSocket = new ServerSocket(SERVER_PORT);
                 while (true) { // server will always be running
                     // listen for incoming clients
-                    Socket client = serverSocket.accept();
+                    Socket client = mServerSocket.accept();
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -51,13 +53,13 @@ public class ServerThread implements Runnable {
                     try {
                         Log.v("ServerHandler", "Waiting...");
                         ObjectInputStream in = new ObjectInputStream(client.getInputStream());
-                        received = (ArrayList<TouchData>) in.readObject();
+                        mReceived = (ArrayList<TouchData>) in.readObject();
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
                                 Log.i("ServerHandler", "New data received ! Animating...");
-                                // we launch the received animation
-                                touchView.launchReceivedAnimation(received);
+                                // we launch the mReceived animation
+                                mTouchView.launchReceivedAnimation(mReceived, mStatus);
                             }
                         });
                         in.close();
@@ -107,5 +109,9 @@ public class ServerThread implements Runnable {
             Log.e("ServerActivity", ex.toString());
         }
         return null;
+    }
+
+    public void setStatus(String status) {
+        mStatus = status;
     }
 }

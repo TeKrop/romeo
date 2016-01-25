@@ -48,4 +48,10 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
             pref.setSummary(editPref.getText());
         }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
+    }
 }

@@ -8,4 +8,13 @@
         <item>male</item>
         <item>female</item>
     </string-array>
+
+    <string-array name="status">
+        <item>@string/available</item>
+        <item>@string/unavailable</item>
+    </string-array>
+    <string-array name="statusData">
+        <item>available</item>
+        <item>unavailable</item>
+    </string-array>
 </resources>

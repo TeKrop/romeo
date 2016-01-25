@@ -5,12 +5,11 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
-import android.graphics.RectF;
-import android.graphics.Region;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -50,6 +49,9 @@ public class TouchDisplayView extends View {
     private float mSegmentOfPathToDraw;
     private int mCount;
     private int mCurrentPath; // contains the current path ID
+
+    // letter button
+    private ImageButton mLetterButton;
 
     /**
      * Constructor of the TouchDisplayView class
@@ -345,20 +347,31 @@ public class TouchDisplayView extends View {
     /**
      * Method called to launch a received animation by network
      */
-    public void launchReceivedAnimation(ArrayList<TouchData> data) {
+    public void launchReceivedAnimation(ArrayList<TouchData> data, String status) {
         Log.i("TouchDisplayView", "Launching received data...");
         // we just replace the current data by the received data, and launch the animation
         // if the current data is null. Else, we store the received data in a temp location
         // in order to display it when the current message has been sent
 
         if (mTouchData.isEmpty()) {
-            mTouchData = data;
-            launchAnimation();
+            // we check if the person is available. If so, we just display the animation.
+            // Else, we display the envelope to indicate to the person that she received a message
+            // and store the data in a temp variable
+            if (status.equals("available")) {
+                mTouchData = data;
+                launchAnimation();
+            } else {
+                mTempReceivedData = data;
+                mLetterButton.setVisibility(VISIBLE);
+            }
         } else {
             mTempReceivedData = data;
         }
     }
 
+    /**
+     * Clear the current touch data
+     */
     public void clearCurrentTouchData() {
         mTouchData.clear();
         this.postInvalidate();
@@ -374,5 +387,9 @@ public class TouchDisplayView extends View {
             mTempReceivedData.clear();
             launchAnimation();
         }
+    }
+
+    public void setLetterButton(ImageButton letterButton) {
+        mLetterButton = letterButton;
     }
 }

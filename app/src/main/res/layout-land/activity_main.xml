@@ -45,11 +45,34 @@
             android:layout_height="wrap_content"
             android:layout_weight="5" >
 
-            <fr.valentinporchet.romeo.TouchDisplayView
-                android:id="@+id/touch_display_view"
+            <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="8"/>
+                android:layout_weight="8">
+
+                <fr.valentinporchet.romeo.TouchDisplayView
+                    android:id="@+id/touch_display_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    />
+
+                <ImageButton
+                    android:id="@+id/letter_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@drawable/btn_letter_closed"
+                    android:visibility="invisible"/>
+
+                <ImageView
+                    android:id="@+id/letter_opened"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@drawable/btn_letter_opened"
+                    android:visibility="invisible" />
+
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"

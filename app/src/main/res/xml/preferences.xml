@@ -16,4 +16,12 @@
         android:defaultValue="male"
         android:summary="%s"/>
 
+    <ListPreference
+        android:key="preference_status"
+        android:title="@string/status"
+        android:entries="@array/status"
+        android:entryValues="@array/statusData"
+        android:defaultValue="available"
+        android:summary="%s"/>
+
 </PreferenceScreen>

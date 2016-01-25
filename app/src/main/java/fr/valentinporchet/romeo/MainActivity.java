@@ -9,6 +9,9 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -23,9 +26,13 @@ public class MainActivity extends Activity {
     private SwipeView mSwipeView;
     private ServerSocket mServerSocket;
     private ClientThread mClientThread;
-    private Thread mServerSocketThread;
     private Thread mClientSocketThread;
+    private ServerThread mServerThread;
+    private Thread mServerSocketThread;
+
+
     private SharedPreferences sharedPrefs;
+    private SharedPreferences.OnSharedPreferenceChangeListener sharedPrefsListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,21 +51,38 @@ public class MainActivity extends Activity {
         mSwipeView = (SwipeView) findViewById(R.id.swipe_view);
         initializeSwipeView();
 
-        // Code for server
-        mServerSocketThread = new Thread(new ServerThread(mServerSocket, mTouchView));
-        mServerSocketThread.start();
-
         // initialisation of settings
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        initializePrefListener();
 
-        // depending on the value, display the right gender icon
-        updateGenderIcon();
+        // Code for server
+        mServerThread = new ServerThread(mServerSocket, mTouchView, sharedPrefs.getString("preference_status", "available"));
+        mServerSocketThread = new Thread(mServerThread);
+        mServerSocketThread.start();
+
+        // add listener to settings, and update the gender icon
+        sharedPrefsListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if (key.equals("preference_gender")) {
+                    Log.i("MainActivity", "Gender changed. Changing the pic...");
+                    updateGenderIcon(sharedPreferences);
+                } else if (key.equals("preference_status")) {
+                    Log.i("MainActivity", "Status changed. Updating server thread...");
+                    mServerThread.setStatus(sharedPreferences.getString(key, "available"));
+                }
+            }
+        };
+        initializePrefListener();
+        updateGenderIcon(sharedPrefs);
+
+        // we add a reference to the letter button to the touch display view
+        mTouchView.setLetterButton((ImageButton) findViewById(R.id.letter_button));
     }
 
-    private void startSettingsActivity(View v) {
+    private void startSettingsActivity() {
         // go to the new options activity
         Intent i = new Intent(this, SettingsActivity.class);
+        initializePrefListener();
         startActivity(i); // we start the settings activity
     }
 
@@ -77,7 +101,40 @@ public class MainActivity extends Activity {
         optionsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSettingsActivity(v);
+                startSettingsActivity();
+            }
+        });
+
+        // Initialisation of letter button
+        final ImageButton letterButton = (ImageButton) findViewById(R.id.letter_button);
+        final ImageView letterOpened = (ImageView) findViewById(R.id.letter_opened);
+        letterButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // we hide the letter button
+                letterButton.setVisibility(View.INVISIBLE);
+                // then we show the letter opened image, and start to animate
+                // the fadeout
+                letterOpened.setVisibility(View.VISIBLE);
+
+                Animation fadeOut = new AlphaAnimation(1, 0);
+                fadeOut.setInterpolator(new AccelerateInterpolator());
+                fadeOut.setDuration(1000);
+
+                fadeOut.setAnimationListener(new Animation.AnimationListener() {
+                    public void onAnimationEnd(Animation animation) {
+                        letterOpened.setVisibility(View.GONE);
+                        mTouchView.launchTempStoredAnimation();
+                    }
+
+                    public void onAnimationRepeat(Animation animation) {
+                    }
+
+                    public void onAnimationStart(Animation animation) {
+                    }
+                });
+
+                letterOpened.startAnimation(fadeOut);
             }
         });
 
@@ -157,25 +214,19 @@ public class MainActivity extends Activity {
     }
 
     private void initializePrefListener() {
-        // we add a listener here, in order to change the male/female icon
-        sharedPrefs.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
-            @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                if (key.equals("preference_gender")) {
-                    updateGenderIcon();
-                }
-            }
-        });
+        // if already here for previous instance, we unregister, and then register for the new
+        sharedPrefs.unregisterOnSharedPreferenceChangeListener(sharedPrefsListener);
+        sharedPrefs.registerOnSharedPreferenceChangeListener(sharedPrefsListener);
     }
 
     /**
      * Method called in order to update the gender icon depending on the configuration
      */
-    public void updateGenderIcon() {
+    public void updateGenderIcon(SharedPreferences pref) {
         ImageView genderIcon = (ImageView) findViewById(R.id.gender_icon);
         // if we are a male, so the other person is a female, and vice versa
         int drawableID = R.drawable.top_right_male;
-        if (sharedPrefs.getString("preference_gender", "female").equals("male")) {
+        if (pref.getString("preference_gender", "female").equals("male")) {
             drawableID = R.drawable.top_right_female;
         }
         genderIcon.setBackgroundResource(drawableID);
@@ -193,16 +244,5 @@ public class MainActivity extends Activity {
         // TODO Auto-generated method stub
         super.onResume();
         //mTouchView.resume();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        /*try {
-            // make sure you close the socket upon exiting
-            mServerSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
     }
 }
