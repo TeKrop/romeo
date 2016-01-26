@@ -6,6 +6,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -41,8 +43,6 @@ public class MainActivity extends Activity {
     private SharedPreferences sharedPrefs;
     private SharedPreferences.OnSharedPreferenceChangeListener sharedPrefsListener;
     private Mode mCurrentMode;
-
-    private LinearLayout mColorsButtons;
 
     public enum Mode {
         MESSAGE,
@@ -97,7 +97,6 @@ public class MainActivity extends Activity {
 
         // we add a reference to the letter button to the touch display view
         mTouchView.setLetterButton((ImageButton) findViewById(R.id.letter_button));
-        mColorsButtons = (LinearLayout) findViewById(R.id.colors_buttons);
 
         // we set the current mode to MESSAGE
         mCurrentMode = Mode.MESSAGE;
@@ -216,7 +215,7 @@ public class MainActivity extends Activity {
                     // we change the current mode
                     mCurrentMode = Mode.TOUCH_THROUGH;
                     // and the background resource on the button
-                    changeModeButton.setBackgroundResource(R.drawable.btn_message);
+                    changeModeButton.setImageResource(R.drawable.btn_message);
                     // and the mode itself
                     mTouchView.setVisibility(View.INVISIBLE);
                     mTouchThroughView.setVisibility(View.VISIBLE);
@@ -226,7 +225,7 @@ public class MainActivity extends Activity {
                     // we change the current mode
                     mCurrentMode = Mode.MESSAGE;
                     // and the background resource on thebutton
-                    changeModeButton.setBackgroundResource(R.drawable.btn_touch_through);
+                    changeModeButton.setImageResource(R.drawable.btn_touch_through);
                     // and the mode itself
                     mTouchThroughView.setVisibility(View.INVISIBLE);
                     mTouchView.setVisibility(View.VISIBLE);
@@ -290,7 +289,7 @@ public class MainActivity extends Activity {
         if (pref.getString("preference_gender", "female").equals("male")) {
             drawableID = R.drawable.top_right_female;
         }
-        genderIcon.setBackgroundResource(drawableID);
+        genderIcon.setImageResource(drawableID);
     }
 
     @Override
