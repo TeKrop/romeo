@@ -16,4 +16,5 @@
     <string name="status">Disponibilité</string>
     <string name="available">Disponible</string>
     <string name="unavailable">Indisponible</string>
+    <string name="description_change_mode_button">Change Mode Button</string>
 </resources>

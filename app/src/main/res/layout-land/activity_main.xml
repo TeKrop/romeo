@@ -16,6 +16,14 @@
         android:layout_weight=".35"
         android:orientation="horizontal">
 
+        <ImageButton
+            android:id="@+id/change_mode_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/btn_touch_through"
+            android:contentDescription="@string/description_change_mode_button"/>
+
         <fr.valentinporchet.romeo.SwipeView
             android:id="@+id/swipe_view"
             android:layout_width="0dp"
@@ -53,13 +61,13 @@
                 <fr.valentinporchet.romeo.TouchDisplayView
                     android:id="@+id/touch_display_view"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="invisible" />
+                    android:layout_height="wrap_content" />
 
                 <fr.valentinporchet.romeo.TouchThroughView
                     android:id="@+id/touch_through_view"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:visibility="invisible" />
 
                 <ImageButton
                     android:id="@+id/letter_button"
@@ -102,6 +110,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/colors_buttons"
             android:orientation="vertical"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"

@@ -15,6 +15,7 @@ import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -39,7 +40,9 @@ public class MainActivity extends Activity {
 
     private SharedPreferences sharedPrefs;
     private SharedPreferences.OnSharedPreferenceChangeListener sharedPrefsListener;
-    private Mode currentMode;
+    private Mode mCurrentMode;
+
+    private LinearLayout mColorsButtons;
 
     public enum Mode {
         MESSAGE,
@@ -94,9 +97,10 @@ public class MainActivity extends Activity {
 
         // we add a reference to the letter button to the touch display view
         mTouchView.setLetterButton((ImageButton) findViewById(R.id.letter_button));
+        mColorsButtons = (LinearLayout) findViewById(R.id.colors_buttons);
 
         // we set the current mode to MESSAGE
-        currentMode = Mode.MESSAGE;
+        mCurrentMode = Mode.MESSAGE;
 
         // code for touch through server
         mTTServerThread = new TTServerThread(mTTServerSocket, mTouchThroughView);
@@ -200,6 +204,35 @@ public class MainActivity extends Activity {
             public boolean onLongClick(View v) {
                 Log.i("MainActivity", "Erasing all paths");
                 return mTouchView.eraseAllPaths();
+            }
+        });
+
+        final ImageButton changeModeButton = (ImageButton) findViewById(R.id.change_mode_button);
+        changeModeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("MainActivity", "Switching current mode");
+                if (mCurrentMode == Mode.MESSAGE) {
+                    // we change the current mode
+                    mCurrentMode = Mode.TOUCH_THROUGH;
+                    // and the background resource on the button
+                    changeModeButton.setBackgroundResource(R.drawable.btn_message);
+                    // and the mode itself
+                    mTouchView.setVisibility(View.INVISIBLE);
+                    mTouchThroughView.setVisibility(View.VISIBLE);
+                    // and we hide the colors buttons
+                    findViewById(R.id.colors_buttons).setVisibility(View.INVISIBLE);
+                } else {
+                    // we change the current mode
+                    mCurrentMode = Mode.MESSAGE;
+                    // and the background resource on thebutton
+                    changeModeButton.setBackgroundResource(R.drawable.btn_touch_through);
+                    // and the mode itself
+                    mTouchThroughView.setVisibility(View.INVISIBLE);
+                    mTouchView.setVisibility(View.VISIBLE);
+                    // and we hide the colors buttons
+                    findViewById(R.id.colors_buttons).setVisibility(View.VISIBLE);
+                }
             }
         });
     }
