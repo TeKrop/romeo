@@ -6,8 +6,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -43,6 +41,8 @@ public class MainActivity extends Activity {
     private SharedPreferences sharedPrefs;
     private SharedPreferences.OnSharedPreferenceChangeListener sharedPrefsListener;
     private Mode mCurrentMode;
+
+    private LinearLayout mColorsButtons;
 
     public enum Mode {
         MESSAGE,
@@ -108,6 +108,8 @@ public class MainActivity extends Activity {
 
         // and we add the server IP to the client thread of touch through
         mTouchThroughView.setServerIP(sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
+
+        mColorsButtons = (LinearLayout) findViewById(R.id.colors_buttons);
     }
 
     private void startSettingsActivity() {
@@ -220,7 +222,10 @@ public class MainActivity extends Activity {
                     mTouchView.setVisibility(View.INVISIBLE);
                     mTouchThroughView.setVisibility(View.VISIBLE);
                     // and we hide the colors buttons
-                    findViewById(R.id.colors_buttons).setVisibility(View.INVISIBLE);
+                    LinearLayout.LayoutParams loparams = (LinearLayout.LayoutParams) mColorsButtons.getLayoutParams();
+                    loparams.weight = 0;
+                    mColorsButtons.setLayoutParams(loparams);
+
                 } else {
                     // we change the current mode
                     mCurrentMode = Mode.MESSAGE;
@@ -229,8 +234,10 @@ public class MainActivity extends Activity {
                     // and the mode itself
                     mTouchThroughView.setVisibility(View.INVISIBLE);
                     mTouchView.setVisibility(View.VISIBLE);
-                    // and we hide the colors buttons
-                    findViewById(R.id.colors_buttons).setVisibility(View.VISIBLE);
+                    // and we show the colors buttons
+                    LinearLayout.LayoutParams loparams = (LinearLayout.LayoutParams) mColorsButtons.getLayoutParams();
+                    loparams.weight = 1;
+                    mColorsButtons.setLayoutParams(loparams);
                 }
             }
         });

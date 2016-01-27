@@ -57,7 +57,7 @@
             android:orientation="vertical"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="5" >
+            android:layout_weight="10" >
 
             <FrameLayout
                 android:layout_width="wrap_content"
@@ -118,23 +118,16 @@
         <LinearLayout
             android:id="@+id/colors_buttons"
             android:orientation="vertical"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_gravity="right"
+            android:layout_weight="1"
             android:gravity="center_vertical|right">
 
             <Space
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
-                android:layout_weight="3"/>
-
-            <ImageButton
-                android:id="@+id/black_button"
-                android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/btn_black"
-                android:contentDescription="@string/description_black_button" />
+                android:layout_weight="4"/>
 
             <ImageButton
                 android:id="@+id/red_button"
@@ -145,12 +138,12 @@
                 android:contentDescription="@string/description_red_button" />
 
             <ImageButton
-                android:id="@+id/green_button"
+                android:id="@+id/black_button"
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:background="@drawable/btn_green"
-                android:contentDescription="@string/description_green_button" />
+                android:background="@drawable/btn_black"
+                android:contentDescription="@string/description_black_button" />
 
             <ImageButton
                 android:id="@+id/blue_button"
@@ -159,6 +152,14 @@
                 android:layout_weight="1"
                 android:background="@drawable/btn_blue"
                 android:contentDescription="@string/description_blue_button" />
+
+            <ImageButton
+                android:id="@+id/green_button"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_green"
+                android:contentDescription="@string/description_green_button" />
 
             <ImageButton
                 android:id="@+id/eraser_button"
@@ -171,7 +172,7 @@
             <Space
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
-                android:layout_weight="3"/>
+                android:layout_weight="4"/>
 
         </LinearLayout>
 
