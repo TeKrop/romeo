@@ -136,8 +136,8 @@ public class TouchDisplayView extends View {
      */
     private void onTouchDown(float x, float y) {
         Log.v("TouchDisplayView", "TouchData : " + mTouchData);
-        // if we did the animation or the touch data is empty
-        if ((mAnimationDone)||(mTouchData.isEmpty())) {
+        // if the touch data is empty
+        if (mTouchData.isEmpty()) {
             // we reinitialize the touch data
             mTouchData.clear();
             mAnimationDone = false;

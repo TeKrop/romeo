@@ -3,6 +3,7 @@ package fr.valentinporchet.romeo;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.os.Vibrator;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -19,10 +20,11 @@ public class TouchThroughView extends View {
      * Private constants
      */
     private final float DENSITY = getResources().getDisplayMetrics().density;
-    private final float DEFAULT_RADIUS = 25.f;
-    private final int DEFAULT_COLOR = 0xFFFF0000; // red
-    private final int DEFAULT_OTHER_COLOR = 0xFF0000FF; // blue
-    private final int DEFAULT_COLLISION_COLOR = DEFAULT_COLOR + DEFAULT_OTHER_COLOR; // fusion
+    private final float WIDTH_RADIUS = 20.f;
+    private final float HEIGHT_RADIUS = 25.f;
+    private final int DEFAULT_COLOR = 0xFFC31D40; // red
+    private final int DEFAULT_OTHER_COLOR = 0xFF272F80; // blue
+    private final int DEFAULT_COLLISION_COLOR = 0xFF2EC196; // green
 
     /**
      * Private variables
@@ -47,11 +49,7 @@ public class TouchThroughView extends View {
      */
     private void initialisePaint() {
         // Initialize Path Paint
-        mPaint.setStrokeWidth(DEFAULT_RADIUS * DENSITY); // thickness of circle
-        mPaint.setDither(true);
-        mPaint.setStyle(Paint.Style.STROKE); // style of circle
-        mPaint.setStrokeJoin(Paint.Join.ROUND); // jointures between elements of circle
-        mPaint.setStrokeCap(Paint.Cap.ROUND); // start and end of circle
+        mPaint.setStyle(Paint.Style.FILL); // style of circle
     }
 
     private void initialisePositions() {
@@ -120,7 +118,7 @@ public class TouchThroughView extends View {
     }
 
     private void sendData(float x, float y) {
-        Log.v("TouchThroughView", "Sending position data : " + x + "," + y);
+        Log.v("TouchThroughView", "Sending position data : " + x + "," + y + " to " + mServerIP);
         mClientThread = new TTClientThread(new TTData(x, y), mServerIP);
         // then we start it
         mClientSocketThread = new Thread(mClientThread);
@@ -135,29 +133,38 @@ public class TouchThroughView extends View {
         // if the two circles are here, check if collision
         if (mPositionX != -1000 && mPositionY != -1000) {
             // if there is collision, we put the same color and vibrate
-            if (collision(mPositionX, mPositionY, mOtherPositionX, mOtherPositionY, DEFAULT_RADIUS)) {
+            if (collision(mPositionX, mPositionY, mOtherPositionX, mOtherPositionY)) {
                 mPaint.setColor(DEFAULT_COLLISION_COLOR);
-                canvas.drawCircle(mPositionX, mPositionY, DEFAULT_RADIUS, mPaint);
-                canvas.drawCircle(mOtherPositionX, mOtherPositionY, DEFAULT_RADIUS, mPaint);
+                drawMyCircle(canvas); drawOtherCircle(canvas);
                 mVibrator.vibrate(300);
             } else {
                 mPaint.setColor(DEFAULT_COLOR); // color of circle
-                canvas.drawCircle(mPositionX, mPositionY, DEFAULT_RADIUS, mPaint);
+                drawMyCircle(canvas);
                 mPaint.setColor(DEFAULT_OTHER_COLOR); // color of other circle
-                canvas.drawCircle(mOtherPositionX, mOtherPositionY, DEFAULT_RADIUS, mPaint);
+                drawOtherCircle(canvas);
             }
         } else {
             // we draw the circle of the current user
             if (mPositionX != -1000) {
                 mPaint.setColor(DEFAULT_COLOR); // color of circle
-                canvas.drawCircle(mPositionX, mPositionY, DEFAULT_RADIUS, mPaint);
+                drawMyCircle(canvas);
             }
             // and the other one if there is any
             if(mOtherPositionX != -1000) {
                 mPaint.setColor(DEFAULT_OTHER_COLOR); // color of other circle
-                canvas.drawCircle(mOtherPositionX, mOtherPositionY, DEFAULT_RADIUS, mPaint);
+                drawOtherCircle(canvas);
             }
         }
+    }
+
+    private void drawMyCircle(Canvas canvas) {
+        canvas.drawOval(new RectF(mPositionX - WIDTH_RADIUS, mPositionY - HEIGHT_RADIUS,
+                                  mPositionX + WIDTH_RADIUS, mPositionY + HEIGHT_RADIUS), mPaint);
+    }
+
+    private void drawOtherCircle(Canvas canvas) {
+        canvas.drawOval(new RectF(mOtherPositionX - WIDTH_RADIUS, mOtherPositionY - HEIGHT_RADIUS,
+                                  mOtherPositionX + WIDTH_RADIUS, mOtherPositionY + HEIGHT_RADIUS), mPaint);
     }
 
     public void getOtherPosition(TTData mReceived) {
@@ -173,10 +180,10 @@ public class TouchThroughView extends View {
      * @param aY y coordinates of first circle
      * @param bX x coordinates of second circle
      * @param bY y coordinates of second circle
-     * @param radius radius of circles
      * @return true if collision
      */
-    private boolean collision(float aX, float aY, float bX, float bY, float radius) {
+    private boolean collision(float aX, float aY, float bX, float bY) {
+        float radius = (WIDTH_RADIUS + HEIGHT_RADIUS) / 2; // approximation for collision
         double x = Math.abs(aX-bX);
         double y = Math.abs(aY-bY);
         double distance = Math.sqrt(x*x + y*y);

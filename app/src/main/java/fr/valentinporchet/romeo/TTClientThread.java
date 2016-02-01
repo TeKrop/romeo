@@ -28,7 +28,7 @@ public class TTClientThread implements Runnable {
     public void run() {
         try {
             serverAddr = InetAddress.getByName(SERVER_ADDRESS);
-            Log.d("TTClientActivity", "C: Connecting...");
+            Log.d("TTClientActivity", "C: Connecting to ..." + SERVER_ADDRESS);
             socket = new Socket(serverAddr, SERVER_PORT);
             connected = true;
 
