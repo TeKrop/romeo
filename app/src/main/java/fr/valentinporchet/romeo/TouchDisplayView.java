@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -354,24 +355,49 @@ public class TouchDisplayView extends View {
      * Method called to launch a received animation by network
      */
     public void launchReceivedAnimation(ArrayList<TouchData> data, String status) {
-        Log.i("TouchDisplayView", "Launching received data...");
+        Log.i("TouchDisplayView", "Analyzing received data...");
         // we just replace the current data by the received data, and launch the animation
-        // if the current data is null. Else, we store the received data in a temp location
-        // in order to display it when the current message has been sent
-
+        // if the current data is null. Else we will do some checking...
         if (mTouchData.isEmpty()) {
             // we check if the person is available. If so, we just display the animation.
             // Else, we display the envelope to indicate to the person that she received a message
             // and store the data in a temp variable
             if (status.equals("available")) {
+                Log.i("TouchDisplayView", "Launching received data now !");
                 mTouchData = data;
                 launchAnimation();
             } else {
+                Log.i("TouchDisplayView", "Storing data and displaying envelope...");
                 mTempReceivedData = data;
                 mLetterButton.setVisibility(VISIBLE);
             }
         } else {
-            mTempReceivedData = data;
+            // we check if the received data corresponds to the actual displayed data + new data.
+            // if so, just display the new data. Else, store the data in temp location
+            int myDataLength = mTouchData.size();
+
+            boolean isResponseMessage = true;
+            for (int i=0; i < myDataLength; i++) {
+                // if the two data aren't equals (not the same uuid), it's a brand new data,
+                // and not a response message, we store it
+                if (!mTouchData.get(i).uuid.equals(data.get(i).uuid)) {
+                    isResponseMessage = false; break;
+                }
+            }
+
+            if (isResponseMessage) {
+                Log.i("TouchDisplayView", "It's a response data ! Displaying...");
+                // we only display the new data by creating an array with only the new data
+                ArrayList<TouchData> newData = new ArrayList<>();
+                for (int i=myDataLength; i < data.size(); i++) {
+                    newData.add(data.get(i));
+                }
+                mTouchData = newData;
+                launchAnimation();
+            } else {
+                Log.i("TouchDisplayView", "Brand new data, but board full : storing...");
+                mTempReceivedData = data;
+            }
         }
     }
 

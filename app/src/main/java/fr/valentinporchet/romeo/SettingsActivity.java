@@ -7,10 +7,7 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Window;
 import android.view.WindowManager;
-
-import java.util.prefs.Preferences;
 
 /**
  * Created by Valentin on 19/01/2016.

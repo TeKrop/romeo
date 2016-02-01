@@ -2,13 +2,9 @@ package fr.valentinporchet.romeo;
 
 import android.util.Log;
 
-import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 
 public class TTClientThread implements Runnable {
 
@@ -49,19 +45,4 @@ public class TTClientThread implements Runnable {
             connected = false;
         }
     }
-
-
-    /*public void setServerIP(String serverIP) {
-        SERVER_ADDRESS = serverIP;
-
-        try {
-            socket.close();
-            serverAddr = InetAddress.getByName(SERVER_ADDRESS);
-            socket = new Socket(serverAddr, SERVER_PORT);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }*/
 }

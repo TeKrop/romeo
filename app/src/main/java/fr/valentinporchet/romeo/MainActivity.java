@@ -262,9 +262,9 @@ public class MainActivity extends Activity {
                     mClientSocketThread = new Thread(mClientThread);
                     mClientSocketThread.start(); // we start the thread
                     // now, we can clear the data on our screen
-                    mTouchView.clearCurrentTouchData();
+                    // mTouchView.clearCurrentTouchData();
                     // then, we launch stored received data if there is any
-                    mTouchView.launchTempStoredAnimation();
+                    // mTouchView.launchTempStoredAnimation();
                 }
 
                 @Override
