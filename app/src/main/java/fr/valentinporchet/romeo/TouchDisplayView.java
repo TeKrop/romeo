@@ -209,6 +209,10 @@ public class TouchDisplayView extends View {
             // we calculate the number of paths to draw depending on when we started the animation
             long currentTime = java.lang.System.currentTimeMillis();
 
+            Log.v("TouchDisplayView", "currentTime = " + currentTime);
+            Log.v("TouchDisplayView", "mChrono = " + mChrono);
+            Log.v("TouchDisplayView", "mTouchData.get(...) = " + mTouchData.get(mCurrentPath).mTimeForPaths.get(mCount));
+
             // if the time that passed is superior to the last amount we have to reach, then
             // we are in a new step of the movement : we update the segment to draw with the value
             // saved for this time in mTempPathLengths
@@ -351,6 +355,25 @@ public class TouchDisplayView extends View {
         }
     }
 
+    public void launchResponseAnimation(ArrayList<TouchData> data) {
+        Log.i("TouchDisplayView", "Launching animation !");
+        mIsAnimationDrawing = true;
+        // we set the current path to draw to the beginning of new drawing
+        mCurrentPath = mTouchData.size();
+        // then we update the stored data with the new one
+        mTouchData = data;
+
+        // we put the chrono to the current time - the time elapsed for the animation
+        mChrono = java.lang.System.currentTimeMillis() - mTouchData.get(mCurrentPath).mTimeForPaths.get(0);
+        mPathMeasure = new PathMeasure(mTouchData.get(mCurrentPath).mPath, false);
+
+        // and initialize the number of paths to draw
+        mCount = 0;
+        mSegmentOfPathToDraw = mTouchData.get(mCurrentPath).mTempPathLengths.get(mCount);
+
+        this.postInvalidate();
+    }
+
     /**
      * Method called to launch a received animation by network
      */
@@ -387,13 +410,9 @@ public class TouchDisplayView extends View {
 
             if (isResponseMessage) {
                 Log.i("TouchDisplayView", "It's a response data ! Displaying...");
-                // we only display the new data by creating an array with only the new data
-                ArrayList<TouchData> newData = new ArrayList<>();
-                for (int i=myDataLength; i < data.size(); i++) {
-                    newData.add(data.get(i));
-                }
-                mTouchData = newData;
-                launchAnimation();
+                // we only animate the new data, and immediatly display the saved data
+                launchResponseAnimation(data);
+
             } else {
                 Log.i("TouchDisplayView", "Brand new data, but board full : storing...");
                 mTempReceivedData = data;

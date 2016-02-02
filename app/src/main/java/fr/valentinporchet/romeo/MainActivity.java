@@ -120,17 +120,8 @@ public class MainActivity extends Activity {
     }
 
     private void initializeButtons() {
-        // Initialisation of animate button
-        Button animateButton = (Button) findViewById(R.id.animate_button);
-        animateButton.setOnClickListener(new Button.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mTouchView.launchAnimation();
-            }
-        });
-
-        // Initialisation of options button
-        Button optionsButton = (Button) findViewById(R.id.options_button);
+        // Initialisation of settings button
+        ImageButton optionsButton = (ImageButton) findViewById(R.id.settings_button);
         optionsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

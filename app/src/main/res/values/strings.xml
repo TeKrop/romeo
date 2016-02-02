@@ -17,4 +17,5 @@
     <string name="available">Disponible</string>
     <string name="unavailable">Indisponible</string>
     <string name="description_change_mode_button">Change Mode Button</string>
+    <string name="description_settings_button">Settings Button</string>
 </resources>
