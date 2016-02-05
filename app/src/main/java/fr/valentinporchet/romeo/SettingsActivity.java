@@ -35,8 +35,6 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.i("SettingsActivity", "Property changed : " + key + " => " + sharedPreferences.getString(key, "null"));
-
         // if this is an edit text, edit the summary with the new value
         Preference pref = findPreference(key);
 

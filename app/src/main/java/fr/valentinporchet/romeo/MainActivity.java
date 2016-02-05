@@ -89,11 +89,15 @@ public class MainActivity extends Activity {
                 } else if (key.equals("preference_penpal_IP")) {
                     Log.i("MainActivity", "IP changed. Updating server thread...");
                     mTouchThroughView.setServerIP(sharedPreferences.getString(key, "192.168.1.1"));
+                } else if (key.equals("preference_other_visible")) {
+                    Log.i("MainActivity", "Other icon visibility changed...");
+                    updateGenderIconVisibility(sharedPreferences.getBoolean(key, true));
                 }
             }
         };
         initializePrefListener();
         updateGenderIcon(sharedPrefs);
+        updateGenderIconVisibility(sharedPrefs.getBoolean("preference_other_visible", true));
 
         // we add a reference to the letter button to the touch display view
         mTouchView.setLetterButton((ImageButton) findViewById(R.id.letter_button));
@@ -288,6 +292,11 @@ public class MainActivity extends Activity {
             drawableID = R.drawable.top_right_female;
         }
         genderIcon.setImageResource(drawableID);
+    }
+
+    public void updateGenderIconVisibility(boolean visible) {
+        ImageView genderIcon = (ImageView) findViewById(R.id.gender_icon);
+        genderIcon.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
     }
 
     @Override

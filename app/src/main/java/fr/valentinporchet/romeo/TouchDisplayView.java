@@ -209,10 +209,6 @@ public class TouchDisplayView extends View {
             // we calculate the number of paths to draw depending on when we started the animation
             long currentTime = java.lang.System.currentTimeMillis();
 
-            Log.v("TouchDisplayView", "currentTime = " + currentTime);
-            Log.v("TouchDisplayView", "mChrono = " + mChrono);
-            Log.v("TouchDisplayView", "mTouchData.get(...) = " + mTouchData.get(mCurrentPath).mTimeForPaths.get(mCount));
-
             // if the time that passed is superior to the last amount we have to reach, then
             // we are in a new step of the movement : we update the segment to draw with the value
             // saved for this time in mTempPathLengths
@@ -220,10 +216,6 @@ public class TouchDisplayView extends View {
                 mSegmentOfPathToDraw = mTouchData.get(mCurrentPath).mTempPathLengths.get(mCount);
                 mCount++;
             }
-
-            Log.v("TouchDisplayView", "mSegmentToDraw = " + mSegmentOfPathToDraw);
-            Log.v("TouchDisplayView", "mCount = " + mCount);
-            Log.v("TouchDisplayView", "mPathMeasure length = " + mPathMeasure.getLength());
 
             // we draw the right amount of paths. Cast to int in order to avoid bugs
             // when the segment to draw is almost equal to the length of the path measure

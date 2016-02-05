@@ -6,7 +6,7 @@
         android:key="preference_penpal_IP"
         android:title="@string/penpal_ip"
         android:dialogTitle="@string/penpal_ip"
-        android:defaultValue="192.168.1.1"/>
+        android:defaultValue="192.168.1.1" />
 
     <ListPreference
         android:key="preference_gender"
@@ -14,7 +14,7 @@
         android:entries="@array/genders"
         android:entryValues="@array/gendersData"
         android:defaultValue="male"
-        android:summary="%s"/>
+        android:summary="%s" />
 
     <ListPreference
         android:key="preference_status"
@@ -22,6 +22,11 @@
         android:entries="@array/status"
         android:entryValues="@array/statusData"
         android:defaultValue="available"
-        android:summary="%s"/>
+        android:summary="%s" />
+
+    <CheckBoxPreference
+        android:key="preference_other_visible"
+        android:title="Visibilité de l'autre"
+        android:defaultValue="true" />
 
 </PreferenceScreen>
