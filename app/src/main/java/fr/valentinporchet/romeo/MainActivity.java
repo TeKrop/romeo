@@ -144,6 +144,7 @@ public class MainActivity extends Activity {
                 // when the timer is finished, the user is inactive, we set the option to inactive
                 mUserActive = false;
                 mServerThread.setStatus(mUserActive);
+                Log.v("MainActivity", "You're now inactive");
             }
         };
         // start the timer
@@ -387,9 +388,11 @@ public class MainActivity extends Activity {
     @Override
     public void onUserInteraction(){
         mUserActive = true; // as soon as we touch the screen, the user is active...
+        mServerThread.setStatus(mUserActive);
         // ... and we restart the timer
         mInactiveTimer.cancel();
         mInactiveTimer.start();
+        Log.v("MainActivity", "You're now active");
     }
 
     @Override
@@ -397,6 +400,7 @@ public class MainActivity extends Activity {
         // TODO Auto-generated method stub
         super.onPause();
         mUserActive = false; // as soon as we touch the screen, the user is active...
+        mServerThread.setStatus(mUserActive);
         mInactiveTimer.cancel();
         //mTouchView.pause();
     }
@@ -407,6 +411,7 @@ public class MainActivity extends Activity {
         super.onResume();
         //mTouchView.resume();
         mUserActive = true; // the user is active...
+        mServerThread.setStatus(mUserActive);
         // ... and we restart the timer
         mInactiveTimer.cancel();
         mInactiveTimer.start();
