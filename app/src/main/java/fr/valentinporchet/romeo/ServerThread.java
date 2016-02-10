@@ -19,13 +19,13 @@ public class ServerThread implements Runnable {
     private ServerSocket mServerSocket;
     private ArrayList<TouchData> mReceived;
     private TouchDisplayView mTouchView;
-    private String mStatus;
+    private boolean mStatus;
 
-    public ServerThread(ServerSocket serverSocket, TouchDisplayView touchView, String status) {
+    public ServerThread(ServerSocket serverSocket, TouchDisplayView touchView, boolean userActive) {
         super();
         mServerSocket = serverSocket;
         mTouchView = touchView;
-        mStatus = status;
+        mStatus = userActive;
     }
 
     @Override
@@ -110,7 +110,7 @@ public class ServerThread implements Runnable {
         return null;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(boolean status) {
         mStatus = status;
     }
 }

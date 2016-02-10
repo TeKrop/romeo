@@ -14,7 +14,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
 
-        <activity android:name="fr.valentinporchet.romeo.MainActivity" >
+        <activity
+            android:name="fr.valentinporchet.romeo.MainActivity"
+            android:screenOrientation="landscape" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

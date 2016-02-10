@@ -36,9 +36,11 @@ public class TouchThroughView extends View {
 
     public TouchThroughView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initialisePaint();
-        initialisePositions();
-        mVibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        if (!isInEditMode()) {
+            initialisePaint();
+            initialisePositions();
+            mVibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        }
     }
 
     /**
@@ -162,7 +164,7 @@ public class TouchThroughView extends View {
 
     private void drawOtherCircle(Canvas canvas) {
         canvas.drawOval(new RectF(mOtherPositionX - WIDTH_RADIUS, mOtherPositionY - HEIGHT_RADIUS,
-                                  mOtherPositionX + WIDTH_RADIUS, mOtherPositionY + HEIGHT_RADIUS), mPaint);
+                mOtherPositionX + WIDTH_RADIUS, mOtherPositionY + HEIGHT_RADIUS), mPaint);
     }
 
     public void getOtherPosition(TTData mReceived) {

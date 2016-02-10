@@ -13,8 +13,7 @@
     <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="0dp"
-        android:layout_weight=".35
-        "
+        android:layout_weight=".35"
         android:orientation="horizontal">
 
         <fr.valentinporchet.romeo.SwipeView
@@ -35,19 +34,33 @@
             android:scaleType="centerInside"
             android:contentDescription="@string/description_change_mode_button"/>
 
-        <ImageView
-            android:id="@+id/gender_icon"
+        <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:adjustViewBounds="true"
-            android:src="@drawable/top_right_male"
-            android:background="#0000"
-            android:scaleType="centerInside"
-            android:contentDescription="@string/description_top_right_corner"/>
+            android:layout_gravity="right">
 
+            <ImageView
+                android:id="@+id/gender_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/top_right_male"
+                android:background="#0000"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/description_top_right_corner"/>
+
+            <ImageView
+                android:id="@+id/circleProgressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/circular_progressbar"
+                android:background="#0000"
+                android:contentDescription="@string/description_top_right_corner"
+                android:visibility="invisible"/>
+
+        </RelativeLayout>
     </FrameLayout>
-
 
     <LinearLayout
         android:orientation="horizontal"

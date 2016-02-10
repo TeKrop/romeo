@@ -12,7 +12,6 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -23,7 +22,7 @@ public class TouchDisplayView extends View {
      * Private constants
      */
     private final float DENSITY = getResources().getDisplayMetrics().density;
-    private final float DEFAULT_THICKNESS = 25.f;
+    private final float DEFAULT_THICKNESS = 15.f;
     private final float MAX_TIME_THICKNESS = 1.f;
 
     /**
@@ -61,7 +60,9 @@ public class TouchDisplayView extends View {
      */
     public TouchDisplayView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initialisePaint();
+        if (!isInEditMode()) {
+            initialisePaint();
+        }
     }
 
     /**
@@ -151,7 +152,7 @@ public class TouchDisplayView extends View {
         mTouchData.add(new TouchData());
 
         // we apply the first position to the path
-        mTouchData.get(mTouchData.size()-1).mPath.moveTo(x, y);
+        mTouchData.get(mTouchData.size() - 1).mPath.moveTo(x, y);
 
         // and we apply the selected color
         mTouchData.get(mTouchData.size()-1).mPathColor = mLastSelectedColor;
@@ -349,27 +350,32 @@ public class TouchDisplayView extends View {
 
     public void launchResponseAnimation(ArrayList<TouchData> data) {
         Log.i("TouchDisplayView", "Launching animation !");
-        mIsAnimationDrawing = true;
-        // we set the current path to draw to the beginning of new drawing
-        mCurrentPath = mTouchData.size();
-        // then we update the stored data with the new one
-        mTouchData = data;
 
-        // we put the chrono to the current time - the time elapsed for the animation
-        mChrono = java.lang.System.currentTimeMillis() - mTouchData.get(mCurrentPath).mTimeForPaths.get(0);
-        mPathMeasure = new PathMeasure(mTouchData.get(mCurrentPath).mPath, false);
+        // first, we check that the current data isn't the same that the one we received
+        // if the last uuid of both paths is the same, it's the same draw
+        if (!mTouchData.get(mTouchData.size()-1).uuid.equals(data.get(data.size()-1).uuid)) {
+            mIsAnimationDrawing = true;
+            // we set the current path to draw to the beginning of new drawing
+            mCurrentPath = mTouchData.size();
+            // then we update the stored data with the new one
+            mTouchData = data;
 
-        // and initialize the number of paths to draw
-        mCount = 0;
-        mSegmentOfPathToDraw = mTouchData.get(mCurrentPath).mTempPathLengths.get(mCount);
+            // we put the chrono to the current time - the time elapsed for the animation
+            mChrono = java.lang.System.currentTimeMillis() - mTouchData.get(mCurrentPath).mTimeForPaths.get(0);
+            mPathMeasure = new PathMeasure(mTouchData.get(mCurrentPath).mPath, false);
 
-        this.postInvalidate();
+            // and initialize the number of paths to draw
+            mCount = 0;
+            mSegmentOfPathToDraw = mTouchData.get(mCurrentPath).mTempPathLengths.get(mCount);
+
+            this.postInvalidate();
+        }
     }
 
     /**
      * Method called to launch a received animation by network
      */
-    public void launchReceivedAnimation(ArrayList<TouchData> data, String status) {
+    public void launchReceivedAnimation(ArrayList<TouchData> data, boolean isUserActive) {
         Log.i("TouchDisplayView", "Analyzing received data...");
         // we just replace the current data by the received data, and launch the animation
         // if the current data is null. Else we will do some checking...
@@ -377,7 +383,7 @@ public class TouchDisplayView extends View {
             // we check if the person is available. If so, we just display the animation.
             // Else, we display the envelope to indicate to the person that she received a message
             // and store the data in a temp variable
-            if (status.equals("available")) {
+            if (isUserActive) {
                 Log.i("TouchDisplayView", "Launching received data now !");
                 mTouchData = data;
                 launchAnimation();

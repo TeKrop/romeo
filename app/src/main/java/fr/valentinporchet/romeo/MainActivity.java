@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -12,10 +13,13 @@ import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -23,6 +27,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends Activity {
+    private boolean mUserActive = true;
+    private CountDownTimer mInactiveTimer;
+    private int USER_TIMEOUT = 8000;
+    private static String mMessageStatus;
+
     private TouchDisplayView mTouchView;
     private TouchThroughView mTouchThroughView;
     private SwipeView mSwipeView;
@@ -43,6 +52,10 @@ public class MainActivity extends Activity {
     private Mode mCurrentMode;
 
     private LinearLayout mColorsButtons;
+
+    public static void setStatus(String status) {
+        MainActivity.mMessageStatus = status;
+    }
 
     public enum Mode {
         MESSAGE,
@@ -72,7 +85,7 @@ public class MainActivity extends Activity {
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Code for message server
-        mServerThread = new ServerThread(mServerSocket, mTouchView, sharedPrefs.getString("preference_status", "available"));
+        mServerThread = new ServerThread(mServerSocket, mTouchView, mUserActive);
         mServerSocketThread = new Thread(mServerThread);
         mServerSocketThread.start();
 
@@ -83,9 +96,6 @@ public class MainActivity extends Activity {
                 if (key.equals("preference_gender")) {
                     Log.i("MainActivity", "Gender changed. Changing the pic...");
                     updateGenderIcon(sharedPreferences);
-                } else if (key.equals("preference_status")) {
-                    Log.i("MainActivity", "Status changed. Updating server thread...");
-                    mServerThread.setStatus(sharedPreferences.getString(key, "available"));
                 } else if (key.equals("preference_penpal_IP")) {
                     Log.i("MainActivity", "IP changed. Updating server thread...");
                     mTouchThroughView.setServerIP(sharedPreferences.getString(key, "192.168.1.1"));
@@ -112,8 +122,21 @@ public class MainActivity extends Activity {
 
         // and we add the server IP to the client thread of touch through
         mTouchThroughView.setServerIP(sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
-
         mColorsButtons = (LinearLayout) findViewById(R.id.colors_buttons);
+
+        // initializing countdown timer
+        mInactiveTimer = new CountDownTimer(USER_TIMEOUT, 1000) {
+            public void onTick(long millisUntilFinished) {
+                //Some code
+            }
+            public void onFinish() {
+                // when the timer is finished, the user is inactive, we set the option to inactive
+                mUserActive = false;
+                mServerThread.setStatus(mUserActive);
+            }
+        };
+        // start the timer
+        mInactiveTimer.start();
     }
 
     private void startSettingsActivity() {
@@ -121,6 +144,36 @@ public class MainActivity extends Activity {
         Intent i = new Intent(this, SettingsActivity.class);
         initializePrefListener();
         startActivity(i); // we start the settings activity
+    }
+
+    private void startCircleLoadingAnimation() {
+        // we set the circle visible and start animation
+        final ImageView circleProgressBar = (ImageView) findViewById(R.id.circleProgressBar);
+        circleProgressBar.setVisibility(View.VISIBLE);
+
+        final Animation rotateCorner = AnimationUtils.loadAnimation(this, R.anim.rotate_corner);
+        rotateCorner.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                Log.v("MainActivity", mMessageStatus);
+                // if this is an error, we show the error circle
+                if (mMessageStatus.equals("Error")) {
+                    circleProgressBar.setImageResource(R.drawable.circular_progressbar_error);
+                }
+                //circleProgressBar.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        circleProgressBar.startAnimation(rotateCorner);
     }
 
     private void initializeButtons() {
@@ -220,7 +273,6 @@ public class MainActivity extends Activity {
                     LinearLayout.LayoutParams loparams = (LinearLayout.LayoutParams) mColorsButtons.getLayoutParams();
                     loparams.weight = 0;
                     mColorsButtons.setLayoutParams(loparams);
-
                 } else {
                     // we change the current mode
                     mCurrentMode = Mode.MESSAGE;
@@ -250,16 +302,23 @@ public class MainActivity extends Activity {
                 @Override
                 public void onLeftToRight() {
                     Log.i("SwipeViewActivity", "swipe leftToRight");
-                    // we create the new client thread with the data and the server IP in preferences
-                    mClientThread = new ClientThread(new ArrayList<>(mTouchView.getTouchData()),
-                            sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
-                    // then we start it
-                    mClientSocketThread = new Thread(mClientThread);
-                    mClientSocketThread.start(); // we start the thread
-                    // now, we can clear the data on our screen
-                    // mTouchView.clearCurrentTouchData();
-                    // then, we launch stored received data if there is any
-                    // mTouchView.launchTempStoredAnimation();
+                    // if there is data to send
+                    if (!mTouchView.getTouchData().isEmpty()) {
+                        setStatus("Sending");
+                        // we create the new client thread with the data and the server IP in preferences
+                        mClientThread = new ClientThread(new ArrayList<>(mTouchView.getTouchData()),
+                                sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
+                        // then we start it
+                        mClientSocketThread = new Thread(mClientThread);
+                        mClientSocketThread.start(); // we start the thread
+                        startCircleLoadingAnimation(); // we start the circle animation
+                        // now, we can clear the data on our screen
+                        // mTouchView.clearCurrentTouchData();
+                        // then, we launch stored received data if there is any
+                        // mTouchView.launchTempStoredAnimation();
+                    } else {
+                        Toast.makeText(getApplication(), "Error : no drawing to send", Toast.LENGTH_LONG).show();
+                    }
                 }
 
                 @Override
@@ -300,9 +359,19 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onUserInteraction(){
+        mUserActive = true; // as soon as we touch the screen, the user is active...
+        // ... and we restart the timer
+        mInactiveTimer.cancel();
+        mInactiveTimer.start();
+    }
+
+    @Override
     protected void onPause() {
         // TODO Auto-generated method stub
         super.onPause();
+        mUserActive = false; // as soon as we touch the screen, the user is active...
+        mInactiveTimer.cancel();
         //mTouchView.pause();
     }
 
@@ -311,5 +380,9 @@ public class MainActivity extends Activity {
         // TODO Auto-generated method stub
         super.onResume();
         //mTouchView.resume();
+        mUserActive = true; // the user is active...
+        // ... and we restart the timer
+        mInactiveTimer.cancel();
+        mInactiveTimer.start();
     }
 }

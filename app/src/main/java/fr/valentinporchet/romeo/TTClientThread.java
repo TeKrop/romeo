@@ -4,10 +4,12 @@ import android.util.Log;
 
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class TTClientThread implements Runnable {
 
+    private static int SOCKET_TIMEOUT = 5000;
     private boolean connected = false;
     private String SERVER_ADDRESS = "192.168.1.1"; // default value
     private int SERVER_PORT = 8181;
@@ -25,7 +27,8 @@ public class TTClientThread implements Runnable {
         try {
             serverAddr = InetAddress.getByName(SERVER_ADDRESS);
             Log.d("TTClientActivity", "C: Connecting to ..." + SERVER_ADDRESS);
-            socket = new Socket(serverAddr, SERVER_PORT);
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(serverAddr, SERVER_PORT), SOCKET_TIMEOUT);
             connected = true;
 
             while (connected) {

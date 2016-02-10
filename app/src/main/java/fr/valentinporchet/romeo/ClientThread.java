@@ -4,11 +4,13 @@ import android.util.Log;
 
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 
 public class ClientThread implements Runnable {
 
+    private static int SOCKET_TIMEOUT = 5000;
     private boolean connected = false;
     private String SERVER_ADDRESS = "192.168.1.1"; // default value
     private int SERVER_PORT = 8080;
@@ -26,7 +28,8 @@ public class ClientThread implements Runnable {
         try {
             serverAddr = InetAddress.getByName(SERVER_ADDRESS);
             Log.d("ClientActivity", "C: Connecting...");
-            socket = new Socket(serverAddr, SERVER_PORT);
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(serverAddr, SERVER_PORT), SOCKET_TIMEOUT);
             connected = true;
 
             while (connected) {
@@ -36,8 +39,10 @@ public class ClientThread implements Runnable {
                     out.writeObject(mDataToSend);
                     out.close();
                     Log.d("ClientActivity", "C: Sent.");
+                    MainActivity.setStatus("Sent");
                     connected = false; // we then close the connection
                 } catch (Exception e) {
+                    MainActivity.setStatus("Error");
                     Log.e("ClientActivity", "S: Error", e);
                 }
             }
@@ -46,6 +51,7 @@ public class ClientThread implements Runnable {
             Log.d("ClientActivity", "C: Closed.");
         } catch (Exception e) {
             Log.e("ClientActivity", "C: Error", e);
+            MainActivity.setStatus("Error");
             connected = false;
         }
     }

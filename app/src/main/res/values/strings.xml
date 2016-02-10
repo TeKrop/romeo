@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Roméo</string>
-    <string name="animate">Animer</string>
     <string name="options">Options</string>
     <string name="penpal_ip">Adresse IP du correspondant</string>
     <string name="description_black_button">Black Button</string>
@@ -13,9 +12,6 @@
     <string name="male">Masculin</string>
     <string name="female">Féminin</string>
     <string name="about">A propos</string>
-    <string name="status">Disponibilité</string>
-    <string name="available">Disponible</string>
-    <string name="unavailable">Indisponible</string>
     <string name="description_change_mode_button">Change Mode Button</string>
     <string name="description_settings_button">Settings Button</string>
 </resources>
