@@ -1,5 +1,6 @@
 package fr.valentinporchet.romeo;
 
+import android.app.Activity;
 import android.util.Log;
 
 import java.io.ObjectOutputStream;
@@ -17,10 +18,12 @@ public class ClientThread implements Runnable {
     private Socket socket;
     private InetAddress serverAddr;
     private ArrayList<TouchData> mDataToSend;
+    private MainActivity mainActivity;
 
-    public ClientThread(ArrayList<TouchData> touchData, String serverIP) {
+    public ClientThread(ArrayList<TouchData> touchData, String serverIP, MainActivity mainActivity) {
         mDataToSend = touchData;
         SERVER_ADDRESS = serverIP;
+        this.mainActivity = mainActivity;
     }
 
     @Override
@@ -39,10 +42,10 @@ public class ClientThread implements Runnable {
                     out.writeObject(mDataToSend);
                     out.close();
                     Log.d("ClientActivity", "C: Sent.");
-                    MainActivity.setStatus("Sent");
+                    mainActivity.setStatus("Sent");
                     connected = false; // we then close the connection
                 } catch (Exception e) {
-                    MainActivity.setStatus("Error");
+                    mainActivity.setStatus("Error");
                     Log.e("ClientActivity", "S: Error", e);
                 }
             }
@@ -51,7 +54,7 @@ public class ClientThread implements Runnable {
             Log.d("ClientActivity", "C: Closed.");
         } catch (Exception e) {
             Log.e("ClientActivity", "C: Error", e);
-            MainActivity.setStatus("Error");
+            mainActivity.setStatus("Error");
             connected = false;
         }
     }

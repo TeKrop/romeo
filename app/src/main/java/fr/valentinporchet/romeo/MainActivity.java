@@ -27,10 +27,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends Activity {
+    private MainActivity me;
+
     private boolean mUserActive = true;
     private CountDownTimer mInactiveTimer;
     private int USER_TIMEOUT = 8000;
-    private static String mMessageStatus;
+    private String mMessageStatus;
 
     private TouchDisplayView mTouchView;
     private TouchThroughView mTouchThroughView;
@@ -52,9 +54,12 @@ public class MainActivity extends Activity {
     private Mode mCurrentMode;
 
     private LinearLayout mColorsButtons;
+    private Animation mRotateCorner;
+    private ImageView mCircleProgressBar;
 
-    public static void setStatus(String status) {
-        MainActivity.mMessageStatus = status;
+    public void setStatus(String status) {
+        mMessageStatus = status;
+        mRotateCorner.cancel();
     }
 
     public enum Mode {
@@ -65,6 +70,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        me = this; // pointer to the instance
         // remove the status bar
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         // remove the title of the application
@@ -109,6 +115,11 @@ public class MainActivity extends Activity {
         updateGenderIcon(sharedPrefs);
         updateGenderIconVisibility(sharedPrefs.getBoolean("preference_other_visible", true));
 
+        // initialize the animation
+        mRotateCorner = AnimationUtils.loadAnimation(this, R.anim.rotate_corner);
+        mCircleProgressBar = (ImageView) findViewById(R.id.circleProgressBar);
+        initializeRotateListener();
+
         // we add a reference to the letter button to the touch display view
         mTouchView.setLetterButton((ImageButton) findViewById(R.id.letter_button));
 
@@ -148,11 +159,12 @@ public class MainActivity extends Activity {
 
     private void startCircleLoadingAnimation() {
         // we set the circle visible and start animation
-        final ImageView circleProgressBar = (ImageView) findViewById(R.id.circleProgressBar);
-        circleProgressBar.setVisibility(View.VISIBLE);
+        mCircleProgressBar.setVisibility(View.VISIBLE);
+        mCircleProgressBar.startAnimation(mRotateCorner);
+    }
 
-        final Animation rotateCorner = AnimationUtils.loadAnimation(this, R.anim.rotate_corner);
-        rotateCorner.setAnimationListener(new Animation.AnimationListener() {
+    private void initializeRotateListener() {
+        mRotateCorner.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
 
@@ -160,12 +172,27 @@ public class MainActivity extends Activity {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                Log.v("MainActivity", mMessageStatus);
+                Log.v("MainActivity", "Message status : " + mMessageStatus);
+                Log.v("MainActivity", "Animation done.");
+                mCircleProgressBar.clearAnimation();
                 // if this is an error, we show the error circle
                 if (mMessageStatus.equals("Error")) {
-                    circleProgressBar.setImageResource(R.drawable.circular_progressbar_error);
+                    mCircleProgressBar.setImageResource(R.drawable.circular_progressbar_error);
                 }
-                //circleProgressBar.setVisibility(View.INVISIBLE);
+                // one second after that, reset the animation
+                CountDownTimer resetTimer = new CountDownTimer(1000, 1000) {
+                    @Override
+                    public void onTick(long millisUntilFinished) {
+
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        mCircleProgressBar.setVisibility(View.INVISIBLE);
+                        mCircleProgressBar.setImageResource(R.drawable.circular_progressbar);
+                    }
+                };
+                resetTimer.start();
             }
 
             @Override
@@ -173,7 +200,6 @@ public class MainActivity extends Activity {
 
             }
         });
-        circleProgressBar.startAnimation(rotateCorner);
     }
 
     private void initializeButtons() {
@@ -307,7 +333,7 @@ public class MainActivity extends Activity {
                         setStatus("Sending");
                         // we create the new client thread with the data and the server IP in preferences
                         mClientThread = new ClientThread(new ArrayList<>(mTouchView.getTouchData()),
-                                sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"));
+                                sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"), me);
                         // then we start it
                         mClientSocketThread = new Thread(mClientThread);
                         mClientSocketThread.start(); // we start the thread
