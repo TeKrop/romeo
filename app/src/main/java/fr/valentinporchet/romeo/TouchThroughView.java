@@ -10,6 +10,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.ArrayList;
+
 /**
  * Created by Valentin on 25/01/2016.
  */
@@ -28,11 +30,12 @@ public class TouchThroughView extends View {
      * Private variables
      */
     private Paint mPaint = new Paint();
-    private float mPositionX, mPositionY, mOtherPositionX, mOtherPositionY;
     private TTClientThread mClientThread;
     private Thread mClientSocketThread;
     private String mServerIP;
     private Vibrator mVibrator;
+    private ArrayList<TTData> mPositions;
+    private ArrayList<TTData> mOtherPositions;
 
     public TouchThroughView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -53,7 +56,8 @@ public class TouchThroughView extends View {
     }
 
     private void initialisePositions() {
-        mPositionX = mPositionY = mOtherPositionX = mOtherPositionY = -1000; // outside of view
+        mPositions = new ArrayList<>();
+        mOtherPositions = new ArrayList<>();
     }
 
     public void setServerIP(String serverIP) {
@@ -63,67 +67,57 @@ public class TouchThroughView extends View {
     /***** EVENT FUNCTIONS *****/
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        final int action = event.getAction();
-        final float x = event.getX();
-        final float y = event.getY();
+        int pointerCount = event.getPointerCount();
+        mPositions.clear();
 
-        /*
-         * Switch on the action. The action is extracted from the event by
-         * applying the MotionEvent.ACTION_MASK.
-         */
-        switch (action & MotionEvent.ACTION_MASK) {
+        // for all touch points
+        for (int i=0; i < pointerCount; i++) {
+            int action = event.getActionMasked();
+            float x = event.getX(i);
+            float y = event.getY(i);
 
-            // Do subfunctions for each in the future
-            case MotionEvent.ACTION_DOWN: {
-                Log.i("TouchDisplayView", "Touching down...");
-                this.onTouchDown(x, y);
-                this.sendData(x, y);
-                break;
-            }
+            /*
+            * Switch on the action. The action is extracted from the event by
+            * applying the MotionEvent.ACTION_MASK.
+            */
+            switch (action & MotionEvent.ACTION_MASK) {
 
-            case MotionEvent.ACTION_MOVE: {
-                Log.v("TouchDisplayView", "Moving on " + x + "," + y);
-                this.onMoveTouch(x, y);
-                this.sendData(x, y);
-                break;
-            }
+                // Do subfunctions for each in the future
+                case MotionEvent.ACTION_DOWN: {
+                    Log.i("TouchDisplayView", "Touching down...");
+                    this.onTouchDown(x, y);
+                    break;
+                }
 
-            case MotionEvent.ACTION_UP: {
-                Log.i("TouchDisplayView", "Releasing...");
-                this.onTouchUp();
-                this.sendData(-1000, -1000);
-                break;
+                case MotionEvent.ACTION_MOVE: {
+                    Log.v("TouchDisplayView", "Moving on " + x + "," + y);
+                    this.onMoveTouch(x, y);
+                    break;
+                }
             }
         }
-
+        this.sendData(); // send the array list of positions
         // trigger redraw on UI thread
         this.postInvalidate();
         return true;
     }
 
     private void onTouchDown(float x, float y) {
-        mPositionX = x;
-        mPositionY = y;
-
-        // send notification to the other person
+        mPositions.add(new TTData(x, y));
     }
 
     private void onMoveTouch(float x, float y) {
-        mPositionX = x;
-        mPositionY = y;
+        mPositions.add(new TTData(x, y));
     }
 
-    private void onTouchUp() {
-        mPositionX = mPositionY = -1000;
-    }
-
-    private void sendData(float x, float y) {
-        Log.v("TouchThroughView", "Sending position data : " + x + "," + y + " to " + mServerIP);
-        mClientThread = new TTClientThread(new TTData(x, y), mServerIP);
+    private void sendData() {
+        Log.v("TouchThroughView", "Sending position data : " + mPositions + " to " + mServerIP);
+        mClientThread = new TTClientThread(mPositions, mServerIP);
         // then we start it
         mClientSocketThread = new Thread(mClientThread);
         mClientSocketThread.start(); // we start the thread
     }
+
     /***** DRAWING FUNCTIONS *****/
 
     @Override
@@ -131,7 +125,7 @@ public class TouchThroughView extends View {
         super.onDraw(canvas);
 
         // if the two circles are here, check if collision
-        if (mPositionX != -1000 && mPositionY != -1000) {
+        /*if (mPositionX != -1000 && mPositionY != -1000) {
             // if there is collision, we put the same color and vibrate
             if (collision(mPositionX, mPositionY, mOtherPositionX, mOtherPositionY)) {
                 mPaint.setColor(DEFAULT_COLLISION_COLOR);
@@ -154,23 +148,74 @@ public class TouchThroughView extends View {
                 mPaint.setColor(DEFAULT_OTHER_COLOR); // color of other circle
                 drawOtherCircle(canvas);
             }
+        }*/
+
+        if (mOtherPositions.isEmpty()) {
+            for (TTData p : mPositions) {
+                mPaint.setColor(DEFAULT_COLOR);
+                drawCircle(p, canvas);
+            }
+        } else {
+            if (mPositions.isEmpty()) {
+                for (TTData p : mOtherPositions) {
+                    mPaint.setColor(DEFAULT_OTHER_COLOR);
+                    drawCircle(p, canvas);
+                }
+            } else {
+                boolean collision = false;
+                int collisionIntensity = 0;
+                TTData p1, p2;
+
+                // List of collisions, in order to draw the circles
+                // in the right color
+                ArrayList<Boolean> collisions = new ArrayList<>();
+                ArrayList<Boolean> collisionsOther = new ArrayList<>();
+                for (int i=0; i < mPositions.size(); i++) { collisions.add(false); }
+                for (int i=0; i < mOtherPositions.size(); i++) { collisionsOther.add(false); }
+
+                for (int i=0; i < mPositions.size(); i++) {
+                    for (int j=0; j < mOtherPositions.size(); j++) {
+                        p1 = mPositions.get(i); p2 = mOtherPositions.get(j);
+
+                        if (collisionBetween(p1.getX(), p1.getY(), p2.getX(), p2.getY())) {
+                            mPaint.setColor(DEFAULT_COLLISION_COLOR);
+                            drawCircle(p1, canvas); drawCircle(p2, canvas);
+                            collision = true; collisionIntensity += 200;
+
+                            collisions.set(i, true); collisionsOther.set(j, true);
+                        } else {
+                            if (collisions.get(i)) {
+                                mPaint.setColor(DEFAULT_COLLISION_COLOR);
+                            } else {
+                                mPaint.setColor(DEFAULT_COLOR);
+                            }
+                            drawCircle(p1, canvas);
+
+                            if (collisionsOther.get(j)) {
+                                mPaint.setColor(DEFAULT_COLLISION_COLOR);
+                            } else {
+                                mPaint.setColor(DEFAULT_OTHER_COLOR);
+                            }
+                            drawCircle(p2, canvas);
+                        }
+                    }
+                }
+
+                if (collision) {
+                    mVibrator.vibrate(collisionIntensity);
+                }
+            }
         }
     }
 
-    private void drawMyCircle(Canvas canvas) {
-        canvas.drawOval(new RectF(mPositionX - WIDTH_RADIUS, mPositionY - HEIGHT_RADIUS,
-                                  mPositionX + WIDTH_RADIUS, mPositionY + HEIGHT_RADIUS), mPaint);
+    private void drawCircle(TTData p, Canvas canvas) {
+        canvas.drawOval(new RectF(p.getX() - WIDTH_RADIUS, p.getY() - HEIGHT_RADIUS,
+                                  p.getX() + WIDTH_RADIUS, p.getY() + HEIGHT_RADIUS), mPaint);
     }
 
-    private void drawOtherCircle(Canvas canvas) {
-        canvas.drawOval(new RectF(mOtherPositionX - WIDTH_RADIUS, mOtherPositionY - HEIGHT_RADIUS,
-                mOtherPositionX + WIDTH_RADIUS, mOtherPositionY + HEIGHT_RADIUS), mPaint);
-    }
-
-    public void getOtherPosition(TTData mReceived) {
-        Log.i("TouchThroughView", "Data received : " + mReceived.posX + " " + mReceived.posY);
-        mOtherPositionX = mReceived.posX;
-        mOtherPositionY = mReceived.posY;
+    public void getOtherPosition(ArrayList<TTData> mReceived) {
+        Log.i("TouchThroughView", "Data received : " + mReceived);
+        mOtherPositions = mReceived;
         this.postInvalidate();
     }
 
@@ -182,7 +227,7 @@ public class TouchThroughView extends View {
      * @param bY y coordinates of second circle
      * @return true if collision
      */
-    private boolean collision(float aX, float aY, float bX, float bY) {
+    private boolean collisionBetween(float aX, float aY, float bX, float bY) {
         float radius = (WIDTH_RADIUS + HEIGHT_RADIUS) / 2; // approximation for collision
         double x = Math.abs(aX-bX);
         double y = Math.abs(aY-bY);

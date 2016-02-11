@@ -3,9 +3,11 @@ package fr.valentinporchet.romeo;
 import android.util.Log;
 
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class TTClientThread implements Runnable {
 
@@ -15,9 +17,9 @@ public class TTClientThread implements Runnable {
     private int SERVER_PORT = 8181;
     private Socket socket;
     private InetAddress serverAddr;
-    private TTData mDataToSend;
+    private ArrayList<TTData> mDataToSend;
 
-    public TTClientThread(TTData data, String serverIP) {
+    public TTClientThread(ArrayList<TTData> data, String serverIP) {
         mDataToSend = data;
         SERVER_ADDRESS = serverIP;
     }

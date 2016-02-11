@@ -6,10 +6,24 @@ import java.io.Serializable;
  * Created by Valentin on 25/01/2016.
  */
 public class TTData implements Serializable {
-    public float posX;
-    public float posY;
+    private float x;
+    private float y;
 
     public TTData(float x, float y) {
-        posX = x; posY = y;
+        this.x = x;
+        this.y = y;
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    @Override
+    public String toString() {
+        return "X=" + x + ";Y=" + y;
     }
 }

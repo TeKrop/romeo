@@ -9,6 +9,7 @@ import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 public class TTServerThread implements Runnable {
@@ -16,7 +17,7 @@ public class TTServerThread implements Runnable {
     private int SERVER_PORT = 8181;
     private Handler handler = new Handler();
     private ServerSocket mServerSocket;
-    private TTData mReceived;
+    private ArrayList<TTData> mReceived;
     private TouchThroughView mTouchView;
 
     public TTServerThread(ServerSocket serverSocket, TouchThroughView touchView) {
@@ -49,7 +50,7 @@ public class TTServerThread implements Runnable {
                     try {
                         Log.v("ServerHandler", "Waiting...");
                         ObjectInputStream in = new ObjectInputStream(client.getInputStream());
-                        mReceived = (TTData) in.readObject();
+                        mReceived = (ArrayList<TTData>) in.readObject();
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
