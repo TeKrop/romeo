@@ -3,8 +3,6 @@ package fr.valentinporchet.romeo;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
@@ -33,7 +31,7 @@ public class MainActivity extends Activity {
 
     private boolean mUserActive = true;
     private CountDownTimer mInactiveTimer;
-    private int USER_TIMEOUT = 8000;
+    private int USER_TIMEOUT = 15000;
     private String mMessageStatus;
 
     private TouchDisplayView mTouchView;

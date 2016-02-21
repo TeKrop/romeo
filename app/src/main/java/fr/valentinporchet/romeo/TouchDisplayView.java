@@ -25,6 +25,7 @@ public class TouchDisplayView extends View {
     private final float DENSITY = getResources().getDisplayMetrics().density;
     private final float DEFAULT_THICKNESS = 15.f;
     private final float MAX_TIME_THICKNESS = 1.f;
+    private final long MOVE_TIME_MINIMUM = 30; // minimum time between two moves (in ms)
 
     /**
      * Private variables
@@ -46,7 +47,7 @@ public class TouchDisplayView extends View {
     // variables used for animation of paths
     private Path mSegment = new Path();
     private PathMeasure mPathMeasure = new PathMeasure();
-    private long mChrono = 0, mTouchChrono = 0; // general chrono for animation, and chrono for thickness of the path
+    private long mChrono = 0, mTouchChrono = 0, mMoveChrono = 0; // general chrono for animation, and chrono for thickness of the path
     private ProgressBar mDrawingProgressBar;
     private long mMinProgress, mCurrentProgress, mMaxProgress; // used for progressBar. min is useful for responses
     private float mSegmentOfPathToDraw;
@@ -111,6 +112,8 @@ public class TouchDisplayView extends View {
                 // if an animation is ongoing, we wait until it's finished
                 if (!mIsAnimationDrawing) {
                     this.onTouchDown(x, y);
+                    // we initialize the move chrono
+                    mMoveChrono = java.lang.System.currentTimeMillis();
                 }
                 break;
             }
@@ -118,8 +121,11 @@ public class TouchDisplayView extends View {
             case MotionEvent.ACTION_MOVE: {
                 Log.v("TouchDisplayView", "Moving on " + x + "," + y);
                 // if an animation is ongoing, we wait until it's finished
-                if (!mIsAnimationDrawing) {
+                // else, if the has been done a certain time after the previous registered move
+                long currentTime = java.lang.System.currentTimeMillis();
+                if ((!mIsAnimationDrawing)&&(currentTime - mMoveChrono >= MOVE_TIME_MINIMUM)) {
                     this.onMoveTouch(x, y);
+                    mMoveChrono = currentTime;
                 }
                 break;
             }
@@ -238,18 +244,18 @@ public class TouchDisplayView extends View {
         // if we are drawing an animation
         if (mIsAnimationDrawing) {
             // we calculate the number of paths to draw depending on when we started the animation
-            long currentTime = java.lang.System.currentTimeMillis();
+            long progress = java.lang.System.currentTimeMillis() - mChrono;
+            TouchData currentPath = mTouchData.get(mCurrentPath);
 
             // we update the progressBar
-            mCurrentProgress = (long)(((currentTime - mChrono - mMinProgress) / (float)(mMaxProgress - mMinProgress)) * 100);
+            mCurrentProgress = (long)(((progress - mMinProgress) / (float)(mMaxProgress - mMinProgress)) * 100);
             mDrawingProgressBar.setProgress((int) mCurrentProgress);
-            Log.v("TouchDisplayView", "min=" + mMinProgress + " | max=" + mMaxProgress + " | current=" + mCurrentProgress + " | time=" + (currentTime - mChrono));
 
             // if the time that passed is superior to the last amount we have to reach, then
             // we are in a new step of the movement : we update the segment to draw with the value
             // saved for this time in mTempPathLengths
-            if ((mTouchData.get(mCurrentPath).mTimeForPaths.size() > mCount) && (currentTime - mChrono > mTouchData.get(mCurrentPath).mTimeForPaths.get(mCount))) {
-                mSegmentOfPathToDraw = mTouchData.get(mCurrentPath).mTempPathLengths.get(mCount);
+            if ((currentPath.mTimeForPaths.size() > mCount) && (progress > currentPath.mTimeForPaths.get(mCount))) {
+                mSegmentOfPathToDraw = currentPath.mTempPathLengths.get(mCount);
                 mCount++;
             }
 
@@ -260,8 +266,8 @@ public class TouchDisplayView extends View {
                 this.drawFinishedPaths(canvas);
 
                 // we apply the current color and thickness of last path
-                mPathPaint.setColor(mTouchData.get(mCurrentPath).mPathColor);
-                mPathPaint.setStrokeWidth(mTouchData.get(mCurrentPath).mPathThickness);
+                mPathPaint.setColor(currentPath.mPathColor);
+                mPathPaint.setStrokeWidth(currentPath.mPathThickness);
 
                 // then we draw the segment of the current animated path
                 mSegment.rewind(); // we empty the segment path
@@ -287,7 +293,6 @@ public class TouchDisplayView extends View {
                         canvas.drawPath(touchData.mPath, mPathPaint);
                     }
                     Log.i("TouchDisplayView", "Animation done.");
-
                     // we hide the progressBar
                     mDrawingProgressBar.setProgress(0);
                 }
