@@ -126,6 +126,11 @@ public class MainActivity extends Activity {
         mTouchView.setDrawingProgressBar((ProgressBar) findViewById(R.id.drawing_progressbar));
         mTouchView.setLittleEnvelope((ImageButton) findViewById(R.id.little_envelope_button));
 
+        // we also link the popup view to the progressBar and to the touch view
+        PopupView popupView = (PopupView) findViewById(R.id.popup_view);
+        mTouchView.setPopupView(popupView);
+        popupView.setDrawingProgressBar((ProgressBar) findViewById(R.id.drawing_progressbar));
+
         // we set the current mode to MESSAGE
         mCurrentMode = Mode.MESSAGE;
 
@@ -338,6 +343,7 @@ public class MainActivity extends Activity {
                 fadeOut.setAnimationListener(new Animation.AnimationListener() {
                     public void onAnimationEnd(Animation animation) {
                         littleEnvelope.setVisibility(View.GONE);
+                        littleEnvelope.setImageResource(R.drawable.btn_letter_closed);
                         mTouchView.launchTempStoredAnimation();
                     }
 

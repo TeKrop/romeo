@@ -57,6 +57,7 @@ public class TouchDisplayView extends View {
     // letter button
     private ImageButton mLetterButton;
     private ImageButton mLittleEnvelope;
+    private PopupView mPopupView;
 
     /**
      * Constructor of the TouchDisplayView class
@@ -65,9 +66,7 @@ public class TouchDisplayView extends View {
      */
     public TouchDisplayView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        if (!isInEditMode()) {
-            initialisePaint();
-        }
+        initialisePaint();
     }
 
     /**
@@ -492,9 +491,14 @@ public class TouchDisplayView extends View {
     public void launchTempStoredAnimation() {
         // if the received data isn't empty
         if (!mTempReceivedData.isEmpty()) {
-            mTouchData = new ArrayList<>(mTempReceivedData);
-            mTempReceivedData.clear();
-            launchAnimation();
+            // if the board is empty, just launch the animation on it
+            if (mTouchData.isEmpty()) {
+                mTouchData = new ArrayList<>(mTempReceivedData);
+                mTempReceivedData.clear();
+                launchAnimation();
+            } else { // else display in a popup
+                mPopupView.launchAnimation(mTempReceivedData);
+            }
         }
     }
 
@@ -508,5 +512,9 @@ public class TouchDisplayView extends View {
 
     public void setLittleEnvelope(ImageButton littleEnvelope) {
         mLittleEnvelope = littleEnvelope;
+    }
+
+    public void setPopupView(PopupView popupView) {
+        mPopupView = popupView;
     }
 }
