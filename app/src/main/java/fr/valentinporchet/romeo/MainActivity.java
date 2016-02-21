@@ -165,6 +165,8 @@ public class MainActivity extends Activity {
         // we set the circle visible and start animation
         mCircleProgressBar.setVisibility(View.VISIBLE);
         mCircleProgressBar.startAnimation(mRotateCorner);
+        // we lower the opacity of the drawing
+        mTouchView.setAlpha(0.3f);
     }
 
     private void initializeRotateListener() {
@@ -194,6 +196,7 @@ public class MainActivity extends Activity {
                     public void onFinish() {
                         mCircleProgressBar.setVisibility(View.INVISIBLE);
                         mCircleProgressBar.setImageResource(R.drawable.circular_progressbar);
+                        mTouchView.setAlpha(1);
                     }
                 };
                 resetTimer.start();
