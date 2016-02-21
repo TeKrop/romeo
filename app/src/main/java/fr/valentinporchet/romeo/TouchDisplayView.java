@@ -56,6 +56,7 @@ public class TouchDisplayView extends View {
 
     // letter button
     private ImageButton mLetterButton;
+    private ImageButton mLittleEnvelope;
 
     /**
      * Constructor of the TouchDisplayView class
@@ -344,10 +345,6 @@ public class TouchDisplayView extends View {
             mTouchData.remove(mTouchData.size() - 1);
             // trigger the redraw
             this.postInvalidate();
-            // if the data is now empty, and we received animation, draw it
-            if (mTouchData.isEmpty()) {
-                launchTempStoredAnimation();
-            }
         }
     }
 
@@ -362,8 +359,6 @@ public class TouchDisplayView extends View {
             mTouchData.clear();
             // trigger the redraw
             this.postInvalidate();
-            // if we received data earlier, draw it
-            launchTempStoredAnimation();
         }
         return true;
     }
@@ -473,12 +468,12 @@ public class TouchDisplayView extends View {
 
             if (isResponseMessage) {
                 Log.i("TouchDisplayView", "It's a response data ! Displaying...");
-                // we only animate the new data, and immediatly display the saved data
+                // we only animate the new data, and immediately display the saved data
                 launchResponseAnimation(data);
-
             } else {
                 Log.i("TouchDisplayView", "Brand new data, but board full : storing...");
                 mTempReceivedData = data;
+                mLittleEnvelope.setVisibility(VISIBLE);
             }
         }
     }
@@ -509,5 +504,9 @@ public class TouchDisplayView extends View {
 
     public void setDrawingProgressBar(ProgressBar drawingProgressBar) {
         mDrawingProgressBar = drawingProgressBar;
+    }
+
+    public void setLittleEnvelope(ImageButton littleEnvelope) {
+        mLittleEnvelope = littleEnvelope;
     }
 }

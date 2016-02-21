@@ -124,6 +124,7 @@ public class MainActivity extends Activity {
         // we add a reference to the letter button to the touch display view. Same for drawing progressbar.
         mTouchView.setLetterButton((ImageButton) findViewById(R.id.letter_button));
         mTouchView.setDrawingProgressBar((ProgressBar) findViewById(R.id.drawing_progressbar));
+        mTouchView.setLittleEnvelope((ImageButton) findViewById(R.id.little_envelope_button));
 
         // we set the current mode to MESSAGE
         mCurrentMode = Mode.MESSAGE;
@@ -320,6 +321,34 @@ public class MainActivity extends Activity {
                     loparams.weight = 1;
                     mColorsButtons.setLayoutParams(loparams);
                 }
+            }
+        });
+
+        final ImageButton littleEnvelope = (ImageButton) findViewById(R.id.little_envelope_button);
+        littleEnvelope.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // we change the background of the envelope
+                littleEnvelope.setImageResource(R.drawable.btn_letter_opened);
+
+                Animation fadeOut = new AlphaAnimation(1, 0);
+                fadeOut.setInterpolator(new AccelerateInterpolator());
+                fadeOut.setDuration(1000);
+
+                fadeOut.setAnimationListener(new Animation.AnimationListener() {
+                    public void onAnimationEnd(Animation animation) {
+                        littleEnvelope.setVisibility(View.GONE);
+                        mTouchView.launchTempStoredAnimation();
+                    }
+
+                    public void onAnimationRepeat(Animation animation) {
+                    }
+
+                    public void onAnimationStart(Animation animation) {
+                    }
+                });
+
+                littleEnvelope.startAnimation(fadeOut);
             }
         });
     }
