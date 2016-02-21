@@ -3,7 +3,8 @@ package fr.valentinporchet.romeo;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.FeatureInfo;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
@@ -19,6 +20,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.net.ServerSocket;
@@ -118,11 +120,12 @@ public class MainActivity extends Activity {
 
         // initialize the animation
         mRotateCorner = AnimationUtils.loadAnimation(this, R.anim.rotate_corner);
-        mCircleProgressBar = (ImageView) findViewById(R.id.circleProgressBar);
+        mCircleProgressBar = (ImageView) findViewById(R.id.circle_progressbar);
         initializeRotateListener();
 
-        // we add a reference to the letter button to the touch display view
+        // we add a reference to the letter button to the touch display view. Same for drawing progressbar.
         mTouchView.setLetterButton((ImageButton) findViewById(R.id.letter_button));
+        mTouchView.setDrawingProgressBar((ProgressBar) findViewById(R.id.drawing_progressbar));
 
         // we set the current mode to MESSAGE
         mCurrentMode = Mode.MESSAGE;
@@ -159,6 +162,7 @@ public class MainActivity extends Activity {
         startActivity(i); // we start the settings activity
     }
 
+    // PART CONCERNING THE PROGRESS CIRCLE FOR SENDING
     private void startCircleLoadingAnimation() {
         // we set the circle visible and start animation
         mCircleProgressBar.setVisibility(View.VISIBLE);
@@ -204,6 +208,7 @@ public class MainActivity extends Activity {
         });
     }
 
+    // INITIALISATION OF ALL BUTTONS OF THE SCREEN
     private void initializeButtons() {
         // Initialisation of settings button
         ImageButton optionsButton = (ImageButton) findViewById(R.id.settings_button);
@@ -318,6 +323,23 @@ public class MainActivity extends Activity {
         });
     }
 
+    // PART CONCERNING THE SENDING DATA PROCESS
+    private void sendDrawingData() {
+        // if there is data to send
+        if (!mTouchView.getTouchData().isEmpty()) {
+            setStatus("Sending");
+            // we create the new client thread with the data and the server IP in preferences
+            mClientThread = new ClientThread(new ArrayList<>(mTouchView.getTouchData()),
+                    sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"), me);
+            // then we start it
+            mClientSocketThread = new Thread(mClientThread);
+            mClientSocketThread.start(); // we start the thread
+            startCircleLoadingAnimation(); // we start the circle animation
+        } else {
+            Toast.makeText(getApplication(), "Error : no drawing to send", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void initializeSwipeView() {
         if (mSwipeView != null) {
             // we add the FlingGestureListener, in order to add the sending event on swiping
@@ -330,23 +352,7 @@ public class MainActivity extends Activity {
                 @Override
                 public void onLeftToRight() {
                     Log.i("SwipeViewActivity", "swipe leftToRight");
-                    // if there is data to send
-                    if (!mTouchView.getTouchData().isEmpty()) {
-                        setStatus("Sending");
-                        // we create the new client thread with the data and the server IP in preferences
-                        mClientThread = new ClientThread(new ArrayList<>(mTouchView.getTouchData()),
-                                sharedPrefs.getString("preference_penpal_IP", "192.168.1.1"), me);
-                        // then we start it
-                        mClientSocketThread = new Thread(mClientThread);
-                        mClientSocketThread.start(); // we start the thread
-                        startCircleLoadingAnimation(); // we start the circle animation
-                        // now, we can clear the data on our screen
-                        // mTouchView.clearCurrentTouchData();
-                        // then, we launch stored received data if there is any
-                        // mTouchView.launchTempStoredAnimation();
-                    } else {
-                        Toast.makeText(getApplication(), "Error : no drawing to send", Toast.LENGTH_LONG).show();
-                    }
+                    sendDrawingData();
                 }
 
                 @Override
@@ -360,19 +366,27 @@ public class MainActivity extends Activity {
                 }
             });
         }
+
+        // we also initialize the button
+        ImageButton genderIcon = (ImageButton) findViewById(R.id.gender_icon);
+        genderIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendDrawingData();
+            }
+        });
     }
 
+    // PART CONCERNING PREFERENCES LISTENER
     private void initializePrefListener() {
         // if already here for previous instance, we unregister, and then register for the new
         sharedPrefs.unregisterOnSharedPreferenceChangeListener(sharedPrefsListener);
         sharedPrefs.registerOnSharedPreferenceChangeListener(sharedPrefsListener);
     }
 
-    /**
-     * Method called in order to update the gender icon depending on the configuration
-     */
+    // PART CONCERNING GENDER ICON
     public void updateGenderIcon(SharedPreferences pref) {
-        ImageView genderIcon = (ImageView) findViewById(R.id.gender_icon);
+        ImageButton genderIcon = (ImageButton) findViewById(R.id.gender_icon);
         // if we are a male, so the other person is a female, and vice versa
         int drawableID = R.drawable.top_right_male;
         if (pref.getString("preference_gender", "female").equals("male")) {
@@ -382,10 +396,11 @@ public class MainActivity extends Activity {
     }
 
     public void updateGenderIconVisibility(boolean visible) {
-        ImageView genderIcon = (ImageView) findViewById(R.id.gender_icon);
+        ImageButton genderIcon = (ImageButton) findViewById(R.id.gender_icon);
         genderIcon.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
     }
 
+    // PART CONCERNING THE ACTIVE/INACTIVE PROCESS
     @Override
     public void onUserInteraction(){
         mUserActive = true; // as soon as we touch the screen, the user is active...
@@ -403,14 +418,12 @@ public class MainActivity extends Activity {
         mUserActive = false; // as soon as we touch the screen, the user is active...
         mServerThread.setStatus(mUserActive);
         mInactiveTimer.cancel();
-        //mTouchView.pause();
     }
 
     @Override
     protected void onResume() {
         // TODO Auto-generated method stub
         super.onResume();
-        //mTouchView.resume();
         mUserActive = true; // the user is active...
         mServerThread.setStatus(mUserActive);
         // ... and we restart the timer

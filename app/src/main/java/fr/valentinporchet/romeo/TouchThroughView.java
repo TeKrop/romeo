@@ -124,44 +124,20 @@ public class TouchThroughView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // if the two circles are here, check if collision
-        /*if (mPositionX != -1000 && mPositionY != -1000) {
-            // if there is collision, we put the same color and vibrate
-            if (collision(mPositionX, mPositionY, mOtherPositionX, mOtherPositionY)) {
-                mPaint.setColor(DEFAULT_COLLISION_COLOR);
-                drawMyCircle(canvas); drawOtherCircle(canvas);
-                mVibrator.vibrate(300);
-            } else {
-                mPaint.setColor(DEFAULT_COLOR); // color of circle
-                drawMyCircle(canvas);
-                mPaint.setColor(DEFAULT_OTHER_COLOR); // color of other circle
-                drawOtherCircle(canvas);
-            }
-        } else {
-            // we draw the circle of the current user
-            if (mPositionX != -1000) {
-                mPaint.setColor(DEFAULT_COLOR); // color of circle
-                drawMyCircle(canvas);
-            }
-            // and the other one if there is any
-            if(mOtherPositionX != -1000) {
-                mPaint.setColor(DEFAULT_OTHER_COLOR); // color of other circle
-                drawOtherCircle(canvas);
-            }
-        }*/
-
+        // if there the correspondant is not touching the screen
         if (mOtherPositions.isEmpty()) {
             for (TTData p : mPositions) {
                 mPaint.setColor(DEFAULT_COLOR);
                 drawCircle(p, canvas);
             }
         } else {
+            // else if we are not touching the screen but the correspondant is
             if (mPositions.isEmpty()) {
                 for (TTData p : mOtherPositions) {
                     mPaint.setColor(DEFAULT_OTHER_COLOR);
                     drawCircle(p, canvas);
                 }
-            } else {
+            } else { // else, tests for collisions
                 boolean collision = false;
                 int collisionIntensity = 0;
                 TTData p1, p2;
@@ -180,7 +156,7 @@ public class TouchThroughView extends View {
                         if (collisionBetween(p1.getX(), p1.getY(), p2.getX(), p2.getY())) {
                             mPaint.setColor(DEFAULT_COLLISION_COLOR);
                             drawCircle(p1, canvas); drawCircle(p2, canvas);
-                            collision = true; collisionIntensity += 200;
+                            collision = true; collisionIntensity += 100;
 
                             collisions.set(i, true); collisionsOther.set(j, true);
                         } else {

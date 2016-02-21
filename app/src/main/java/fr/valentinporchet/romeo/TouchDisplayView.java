@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -46,6 +47,8 @@ public class TouchDisplayView extends View {
     private Path mSegment = new Path();
     private PathMeasure mPathMeasure = new PathMeasure();
     private long mChrono = 0, mTouchChrono = 0; // general chrono for animation, and chrono for thickness of the path
+    private ProgressBar mDrawingProgressBar;
+    private long mMinProgress, mCurrentProgress, mMaxProgress; // used for progressBar. min is useful for responses
     private float mSegmentOfPathToDraw;
     private int mCount;
     private int mCurrentPath; // contains the current path ID
@@ -105,16 +108,19 @@ public class TouchDisplayView extends View {
             // Do subfunctions for each in the future
             case MotionEvent.ACTION_DOWN: {
                 Log.i("TouchDisplayView", "Touching down...");
-                // if an animation is ongoing, we stop it
-                mIsAnimationDrawing = false;
-                this.onTouchDown(x, y);
-
+                // if an animation is ongoing, we wait until it's finished
+                if (!mIsAnimationDrawing) {
+                    this.onTouchDown(x, y);
+                }
                 break;
             }
 
             case MotionEvent.ACTION_MOVE: {
                 Log.v("TouchDisplayView", "Moving on " + x + "," + y);
-                this.onMoveTouch(x, y);
+                // if an animation is ongoing, we wait until it's finished
+                if (!mIsAnimationDrawing) {
+                    this.onMoveTouch(x, y);
+                }
                 break;
             }
 
@@ -122,6 +128,9 @@ public class TouchDisplayView extends View {
                 Log.i("TouchDisplayView", "Releasing...");
                 // For debugging purpose, we display the tab
                 Log.v("TouchDisplayView", "Data : " + mTouchData);
+                if (!mIsAnimationDrawing) {
+                    this.onTouchUp(x, y);
+                }
                 break;
             }
         }
@@ -196,6 +205,27 @@ public class TouchDisplayView extends View {
         mTouchData.get(mTouchData.size()-1).mTempPathLengths.add(new PathMeasure(mTouchData.get(mTouchData.size()-1).mPath, false).getLength());
     }
 
+    /**
+     * Function called when we are touching up
+     * @param x x touching coordinates
+     * @param y y touching coordinates
+     */
+    private void onTouchUp(float x, float y) {
+        // if we didn't move since the onTouchDown
+        // event, we will draw a dot
+        if (mIsFirstTimeMoving) {
+            // we set the thickness as default
+            mTouchData.get(mTouchData.size()-1).mPathThickness = DEFAULT_THICKNESS * DENSITY;
+
+            // add a new little line
+            mTouchData.get(mTouchData.size()-1).mPath.lineTo(x+1, y+1);
+            mTouchData.get(mTouchData.size()-1).mTimeForPaths.add(java.lang.System.currentTimeMillis() - mChrono);
+            mTouchData.get(mTouchData.size() - 1).mTempPathLengths.add(new PathMeasure(mTouchData.get(mTouchData.size() - 1).mPath, false).getLength());
+
+            mIsFirstTimeMoving = false;
+        } // else, don't do anything special
+    }
+
     /***************** DRAWING FUNCTIONS *****************/
 
     /*
@@ -209,6 +239,11 @@ public class TouchDisplayView extends View {
         if (mIsAnimationDrawing) {
             // we calculate the number of paths to draw depending on when we started the animation
             long currentTime = java.lang.System.currentTimeMillis();
+
+            // we update the progressBar
+            mCurrentProgress = (long)(((currentTime - mChrono - mMinProgress) / (float)(mMaxProgress - mMinProgress)) * 100);
+            mDrawingProgressBar.setProgress((int) mCurrentProgress);
+            Log.v("TouchDisplayView", "min=" + mMinProgress + " | max=" + mMaxProgress + " | current=" + mCurrentProgress + " | time=" + (currentTime - mChrono));
 
             // if the time that passed is superior to the last amount we have to reach, then
             // we are in a new step of the movement : we update the segment to draw with the value
@@ -252,6 +287,9 @@ public class TouchDisplayView extends View {
                         canvas.drawPath(touchData.mPath, mPathPaint);
                     }
                     Log.i("TouchDisplayView", "Animation done.");
+
+                    // we hide the progressBar
+                    mDrawingProgressBar.setProgress(0);
                 }
             }
             this.postInvalidate();
@@ -293,12 +331,12 @@ public class TouchDisplayView extends View {
      * Method called to erase the last drawed path
      */
     public void eraseLastPath() {
-        // if there is data on screen
-        if (!mTouchData.isEmpty()) {
-            // if an animation is running, we stop it
-            mIsAnimationDrawing = false;
+        // if an animation is running, just wait until it's
+        // finished before deleting something
+        // else, if there is data on screen
+        if ((!mIsAnimationDrawing) && (!mTouchData.isEmpty())){
             // we remove the last data in the touch data array
-            mTouchData.remove(mTouchData.size()-1);
+            mTouchData.remove(mTouchData.size() - 1);
             // trigger the redraw
             this.postInvalidate();
             // if the data is now empty, and we received animation, draw it
@@ -312,20 +350,21 @@ public class TouchDisplayView extends View {
      * Method called to erase all the paths on screen
      */
     public boolean eraseAllPaths() {
-        // if an animation is running, we stop it
-        mIsAnimationDrawing = false;
-        // we empty the touch data
-        mTouchData.clear();
-        // trigger the redraw
-        this.postInvalidate();
-        // if we received data earlier, draw it
-        launchTempStoredAnimation();
+        // if an animation is running, just wait until it's
+        // finished before deleting something
+        if (!mIsAnimationDrawing) {
+            // we empty the touch data
+            mTouchData.clear();
+            // trigger the redraw
+            this.postInvalidate();
+            // if we received data earlier, draw it
+            launchTempStoredAnimation();
+        }
         return true;
     }
 
     /**
-     * Method called when the button is pressed, in order to launch
-     * the animation process
+     * Method called when we launch a classic animation process
      */
     public void launchAnimation() {
         // if there is no drawing, we display an error notification
@@ -344,10 +383,19 @@ public class TouchDisplayView extends View {
             mCount = 0;
             mCurrentPath = 0;
 
+            // and get the value of the max time for animation
+            TouchData last = mTouchData.get(mTouchData.size()-1);
+            mMinProgress = 0;
+            mMaxProgress = last.mTimeForPaths.get(last.mTimeForPaths.size()-1);
+
             this.postInvalidate();
         }
     }
 
+    /**
+     * Method called when we received a response drawing, in order to animate it
+     * @param data received data
+     */
     public void launchResponseAnimation(ArrayList<TouchData> data) {
         Log.i("TouchDisplayView", "Launching animation !");
 
@@ -361,12 +409,18 @@ public class TouchDisplayView extends View {
             mTouchData = data;
 
             // we put the chrono to the current time - the time elapsed for the animation
-            mChrono = java.lang.System.currentTimeMillis() - mTouchData.get(mCurrentPath).mTimeForPaths.get(0);
-            mPathMeasure = new PathMeasure(mTouchData.get(mCurrentPath).mPath, false);
+            TouchData current = mTouchData.get(mCurrentPath);
+            mChrono = java.lang.System.currentTimeMillis() - current.mTimeForPaths.get(0);
+            mPathMeasure = new PathMeasure(current.mPath, false);
 
             // and initialize the number of paths to draw
             mCount = 0;
-            mSegmentOfPathToDraw = mTouchData.get(mCurrentPath).mTempPathLengths.get(mCount);
+            mSegmentOfPathToDraw = current.mTempPathLengths.get(mCount);
+
+            // and get the value of the max time for animation
+            TouchData last = mTouchData.get(mTouchData.size()-1);
+            mMinProgress = current.mTimeForPaths.get(0);
+            mMaxProgress = last.mTimeForPaths.get(last.mTimeForPaths.size()-1);
 
             this.postInvalidate();
         }
@@ -396,13 +450,19 @@ public class TouchDisplayView extends View {
             // we check if the received data corresponds to the actual displayed data + new data.
             // if so, just display the new data. Else, store the data in temp location
             int myDataLength = mTouchData.size();
-
             boolean isResponseMessage = true;
-            for (int i=0; i < myDataLength; i++) {
-                // if the two data aren't equals (not the same uuid), it's a brand new data,
-                // and not a response message, we store it
-                if (!mTouchData.get(i).uuid.equals(data.get(i).uuid)) {
-                    isResponseMessage = false; break;
+
+            // if the current data is longer than the received data, it's
+            // obviously not a response
+            if (myDataLength > data.size()) {
+                isResponseMessage = false;
+            } else { // else we will do some checks
+                for (int i=0; i < myDataLength; i++) {
+                    // if the two data aren't equals (not the same uuid), it's a brand new data,
+                    // and not a response message, we store it
+                    if (!mTouchData.get(i).uuid.equals(data.get(i).uuid)) {
+                        isResponseMessage = false; break;
+                    }
                 }
             }
 
@@ -440,5 +500,9 @@ public class TouchDisplayView extends View {
 
     public void setLetterButton(ImageButton letterButton) {
         mLetterButton = letterButton;
+    }
+
+    public void setDrawingProgressBar(ProgressBar drawingProgressBar) {
+        mDrawingProgressBar = drawingProgressBar;
     }
 }
