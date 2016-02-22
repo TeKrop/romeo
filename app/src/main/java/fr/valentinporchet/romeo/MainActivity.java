@@ -52,6 +52,7 @@ public class MainActivity extends Activity {
     private SharedPreferences sharedPrefs;
     private SharedPreferences.OnSharedPreferenceChangeListener sharedPrefsListener;
     private Mode mCurrentMode;
+    private ImageButton mChangeModeButton;
 
     private LinearLayout mColorsButtons;
     private Animation mRotateCorner;
@@ -63,8 +64,8 @@ public class MainActivity extends Activity {
     }
 
     public enum Mode {
-        MESSAGE,
-        TOUCH_THROUGH
+        REDACTION,
+        TOUCH
     };
 
     @Override
@@ -81,6 +82,9 @@ public class MainActivity extends Activity {
 
         // initialisation of touch view and relation to seekbar
         mTouchView = (TouchDisplayView) findViewById(R.id.touch_display_view);
+        // we set the current mode to REDACTION
+        mCurrentMode = Mode.REDACTION;
+        mChangeModeButton = (ImageButton) findViewById(R.id.change_mode_button);
         initializeButtons();
 
         mSwipeView = (SwipeView) findViewById(R.id.swipe_view);
@@ -130,9 +134,6 @@ public class MainActivity extends Activity {
         PopupView popupView = (PopupView) findViewById(R.id.popup_view);
         mTouchView.setPopupView(popupView);
         popupView.setDrawingProgressBar((ProgressBar) findViewById(R.id.drawing_progressbar));
-
-        // we set the current mode to MESSAGE
-        mCurrentMode = Mode.MESSAGE;
 
         // code for touch through server
         mTTServerThread = new TTServerThread(mTTServerSocket, mTouchThroughView);
@@ -215,6 +216,32 @@ public class MainActivity extends Activity {
         });
     }
 
+    /**
+     * Change the mode of the application
+     * @param mode Redaction or Touch
+     */
+    public void setMode(Mode mode) {
+        // if we are not in the mode we want
+        if (mode != mCurrentMode) {
+            // we change the current mode
+            mCurrentMode = mode;
+
+            if (mode == Mode.REDACTION) {
+                // and the background resource on thebutton
+                mChangeModeButton.setImageResource(R.drawable.btn_touch_through);
+                // and the mode itself
+                mTouchThroughView.setVisibility(View.INVISIBLE);
+                mTouchView.setVisibility(View.VISIBLE);
+            } else {
+                // and the background resource on the button
+                mChangeModeButton.setImageResource(R.drawable.btn_message);
+                // and the mode itself
+                mTouchView.setVisibility(View.INVISIBLE);
+                mTouchThroughView.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
     // INITIALISATION OF ALL BUTTONS OF THE SCREEN
     private void initializeButtons() {
         // Initialisation of settings button
@@ -245,6 +272,7 @@ public class MainActivity extends Activity {
                 fadeOut.setAnimationListener(new Animation.AnimationListener() {
                     public void onAnimationEnd(Animation animation) {
                         letterOpened.setVisibility(View.GONE);
+                        setMode(Mode.REDACTION); // in case we are inactive and in touch mode
                         mTouchView.launchTempStoredAnimation();
                     }
 
@@ -272,7 +300,13 @@ public class MainActivity extends Activity {
             findViewById(entry.getKey()).setOnClickListener(new Button.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mTouchView.setSelectedColor(value);
+                    // if we are on redaction mode, we change the
+                    // selected color for drawing
+                    if (mCurrentMode == Mode.REDACTION) {
+                        mTouchView.setSelectedColor(value);
+                    } else { // else we change the color of the current dot
+                        mTouchThroughView.setSelectedColor(value);
+                    }
                 }
             });
         }
@@ -283,48 +317,32 @@ public class MainActivity extends Activity {
         eraserButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i("MainActivity", "Erasing last path");
-                mTouchView.eraseLastPath();
+                if (mCurrentMode == Mode.REDACTION) {
+                    Log.i("MainActivity", "Erasing last path");
+                    mTouchView.eraseLastPath();
+                }
             }
         });
         // On long click, erase all
         eraserButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                Log.i("MainActivity", "Erasing all paths");
-                return mTouchView.eraseAllPaths();
+                if (mCurrentMode == Mode.REDACTION) {
+                    Log.i("MainActivity", "Erasing all paths");
+                    return mTouchView.eraseAllPaths();
+                }
+                return true;
             }
         });
 
-        final ImageButton changeModeButton = (ImageButton) findViewById(R.id.change_mode_button);
-        changeModeButton.setOnClickListener(new View.OnClickListener() {
+        mChangeModeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.i("MainActivity", "Switching current mode");
-                if (mCurrentMode == Mode.MESSAGE) {
-                    // we change the current mode
-                    mCurrentMode = Mode.TOUCH_THROUGH;
-                    // and the background resource on the button
-                    changeModeButton.setImageResource(R.drawable.btn_message);
-                    // and the mode itself
-                    mTouchView.setVisibility(View.INVISIBLE);
-                    mTouchThroughView.setVisibility(View.VISIBLE);
-                    // and we hide the colors buttons
-                    LinearLayout.LayoutParams loparams = (LinearLayout.LayoutParams) mColorsButtons.getLayoutParams();
-                    loparams.weight = 0;
-                    mColorsButtons.setLayoutParams(loparams);
+                if (mCurrentMode == Mode.REDACTION) {
+                    setMode(Mode.TOUCH);
                 } else {
-                    // we change the current mode
-                    mCurrentMode = Mode.MESSAGE;
-                    // and the background resource on thebutton
-                    changeModeButton.setImageResource(R.drawable.btn_touch_through);
-                    // and the mode itself
-                    mTouchThroughView.setVisibility(View.INVISIBLE);
-                    mTouchView.setVisibility(View.VISIBLE);
-                    // and we show the colors buttons
-                    LinearLayout.LayoutParams loparams = (LinearLayout.LayoutParams) mColorsButtons.getLayoutParams();
-                    loparams.weight = 1;
-                    mColorsButtons.setLayoutParams(loparams);
+                    setMode(Mode.REDACTION);
                 }
             }
         });

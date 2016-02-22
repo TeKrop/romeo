@@ -24,18 +24,21 @@ public class TouchThroughView extends View {
     private final float HEIGHT_RADIUS = 25.f;
     private final int DEFAULT_COLOR = 0xFFC31D40; // red
     private final int DEFAULT_OTHER_COLOR = 0xFF272F80; // blue
-    private final int DEFAULT_COLLISION_COLOR = 0xFF2EC196; // green
+    //private final int DEFAULT_COLLISION_COLOR = 0xFF2EC196; // green
 
     /**
      * Private variables
      */
     private Paint mPaint = new Paint();
+    private int mColor = DEFAULT_COLOR;
+    private int mOtherColor = DEFAULT_OTHER_COLOR;
+    private int mCollisionColor = mColor + mOtherColor;
     private TTClientThread mClientThread;
     private Thread mClientSocketThread;
     private String mServerIP;
     private Vibrator mVibrator;
-    private ArrayList<TTData> mPositions;
-    private ArrayList<TTData> mOtherPositions;
+    private TTData mPositions;
+    private TTData mOtherPositions;
 
     public TouchThroughView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -56,8 +59,8 @@ public class TouchThroughView extends View {
     }
 
     private void initialisePositions() {
-        mPositions = new ArrayList<>();
-        mOtherPositions = new ArrayList<>();
+        mPositions = new TTData();
+        mOtherPositions = new TTData();
     }
 
     public void setServerIP(String serverIP) {
@@ -69,6 +72,7 @@ public class TouchThroughView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         int pointerCount = event.getPointerCount();
         mPositions.clear();
+        mPositions.setColor(mColor);
 
         // for all touch points
         for (int i=0; i < pointerCount; i++) {
@@ -103,11 +107,11 @@ public class TouchThroughView extends View {
     }
 
     private void onTouchDown(float x, float y) {
-        mPositions.add(new TTData(x, y));
+        mPositions.add(x, y);
     }
 
     private void onMoveTouch(float x, float y) {
-        mPositions.add(new TTData(x, y));
+        mPositions.add(x, y);
     }
 
     private void sendData() {
@@ -126,21 +130,21 @@ public class TouchThroughView extends View {
 
         // if there the correspondant is not touching the screen
         if (mOtherPositions.isEmpty()) {
-            for (TTData p : mPositions) {
-                mPaint.setColor(DEFAULT_COLOR);
+            for (TTData.Position p : mPositions) {
+                mPaint.setColor(mColor);
                 drawCircle(p, canvas);
             }
         } else {
             // else if we are not touching the screen but the correspondant is
             if (mPositions.isEmpty()) {
-                for (TTData p : mOtherPositions) {
-                    mPaint.setColor(DEFAULT_OTHER_COLOR);
+                for (TTData.Position p : mOtherPositions) {
+                    mPaint.setColor(mOtherColor);
                     drawCircle(p, canvas);
                 }
             } else { // else, tests for collisions
                 boolean collision = false;
                 int collisionIntensity = 0;
-                TTData p1, p2;
+                TTData.Position p1, p2;
 
                 // List of collisions, in order to draw the circles
                 // in the right color
@@ -153,24 +157,24 @@ public class TouchThroughView extends View {
                     for (int j=0; j < mOtherPositions.size(); j++) {
                         p1 = mPositions.get(i); p2 = mOtherPositions.get(j);
 
-                        if (collisionBetween(p1.getX(), p1.getY(), p2.getX(), p2.getY())) {
-                            mPaint.setColor(DEFAULT_COLLISION_COLOR);
+                        if (collisionBetween(p1.x, p1.y, p2.x, p2.y)) {
+                            mPaint.setColor(mCollisionColor);
                             drawCircle(p1, canvas); drawCircle(p2, canvas);
                             collision = true; collisionIntensity += 100;
 
                             collisions.set(i, true); collisionsOther.set(j, true);
                         } else {
                             if (collisions.get(i)) {
-                                mPaint.setColor(DEFAULT_COLLISION_COLOR);
+                                mPaint.setColor(mCollisionColor);
                             } else {
-                                mPaint.setColor(DEFAULT_COLOR);
+                                mPaint.setColor(mColor);
                             }
                             drawCircle(p1, canvas);
 
                             if (collisionsOther.get(j)) {
-                                mPaint.setColor(DEFAULT_COLLISION_COLOR);
+                                mPaint.setColor(mCollisionColor);
                             } else {
-                                mPaint.setColor(DEFAULT_OTHER_COLOR);
+                                mPaint.setColor(mOtherColor);
                             }
                             drawCircle(p2, canvas);
                         }
@@ -184,15 +188,14 @@ public class TouchThroughView extends View {
         }
     }
 
-    private void drawCircle(TTData p, Canvas canvas) {
-        canvas.drawOval(new RectF(p.getX() - WIDTH_RADIUS, p.getY() - HEIGHT_RADIUS,
-                                  p.getX() + WIDTH_RADIUS, p.getY() + HEIGHT_RADIUS), mPaint);
-    }
-
-    public void getOtherPosition(ArrayList<TTData> mReceived) {
-        Log.i("TouchThroughView", "Data received : " + mReceived);
-        mOtherPositions = mReceived;
-        this.postInvalidate();
+    /**
+     * Draw a circle, with coordinates data
+     * @param p coordinates data
+     * @param canvas Canvas on which we draw
+     */
+    private void drawCircle(TTData.Position p, Canvas canvas) {
+        canvas.drawOval(new RectF(p.x - WIDTH_RADIUS, p.y - HEIGHT_RADIUS,
+                p.x + WIDTH_RADIUS, p.y + HEIGHT_RADIUS), mPaint);
     }
 
     /**
@@ -209,5 +212,24 @@ public class TouchThroughView extends View {
         double y = Math.abs(aY-bY);
         double distance = Math.sqrt(x*x + y*y);
         return distance < 2*radius;
+    }
+
+    // PUBLIC METHODS
+
+    /**
+     * Public method in order to retrieve data
+     * @param mReceived received data
+     */
+    public void getOtherPositions(TTData mReceived) {
+        Log.i("TouchThroughView", "Data received : " + mReceived);
+        mOtherPositions = mReceived;
+        mOtherColor = mReceived.getColor();
+        mCollisionColor = mColor + mOtherColor;
+        this.postInvalidate();
+    }
+
+    public void setSelectedColor(int color) {
+        mColor = color;
+        mCollisionColor = mColor + mOtherColor;
     }
 }

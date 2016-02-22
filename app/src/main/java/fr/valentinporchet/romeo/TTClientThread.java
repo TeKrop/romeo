@@ -17,9 +17,9 @@ public class TTClientThread implements Runnable {
     private int SERVER_PORT = 8181;
     private Socket socket;
     private InetAddress serverAddr;
-    private ArrayList<TTData> mDataToSend;
+    private TTData mDataToSend;
 
-    public TTClientThread(ArrayList<TTData> data, String serverIP) {
+    public TTClientThread(TTData data, String serverIP) {
         mDataToSend = data;
         SERVER_ADDRESS = serverIP;
     }

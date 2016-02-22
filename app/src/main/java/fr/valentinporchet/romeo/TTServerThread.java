@@ -17,7 +17,7 @@ public class TTServerThread implements Runnable {
     private int SERVER_PORT = 8181;
     private Handler handler = new Handler();
     private ServerSocket mServerSocket;
-    private ArrayList<TTData> mReceived;
+    private TTData mReceived;
     private TouchThroughView mTouchView;
 
     public TTServerThread(ServerSocket serverSocket, TouchThroughView touchView) {
@@ -50,13 +50,13 @@ public class TTServerThread implements Runnable {
                     try {
                         Log.v("ServerHandler", "Waiting...");
                         ObjectInputStream in = new ObjectInputStream(client.getInputStream());
-                        mReceived = (ArrayList<TTData>) in.readObject();
+                        mReceived = (TTData) in.readObject();
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
                                 Log.i("ServerHandler", "New data received ! Adding the dot...");
                                 // we launch the mReceived animation
-                                mTouchView.getOtherPosition(mReceived);
+                                mTouchView.getOtherPositions(mReceived);
                             }
                         });
                         in.close();
